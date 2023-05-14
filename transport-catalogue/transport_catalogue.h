@@ -2,16 +2,15 @@
 
 #include "geo.h"
 
-#include <unordered_set>
 #include <unordered_map>
 #include <string>
 #include <string_view>
-#include <algorithm>
-#include <list>
-#include <numeric>
+#include <deque>
 #include <set>
-#include <stdexcept>
 #include <vector>
+
+namespace TransporCatalogueLib
+{
 
 namespace CatalogueCore
 {
@@ -23,12 +22,10 @@ struct Bus;
 struct Stop {
     // Название остановки
     std::string stop_name;
-    // Широта по гео данным
-    double latitude;
-    // Долгота по гео данным
-    double longitude;
+    // Гео данные(долгота, широта)
+    Geo::Coordinates coordinates;
     // Отсортированное хранилище маршрутов(автобусов), проходящих через остановку
-    std::set<Bus*>routs;
+    std::vector<Bus*>routs;
 };
 
 // Структура автобуса(маршрута)
@@ -36,8 +33,10 @@ struct Bus {
     // Название пвтобуса(маршрута)
     std::string bus;
     // Хранилище ссылок на остановки, находящиеся на маршруте(автобусе)
-    std::list<Stop*> stops_for_bus_;
+    std::vector<const Stop*> stops_for_bus_;
 };
+
+typedef std::unordered_map<std::string_view, std::unordered_map<std::string_view, size_t>> StopToStopDist;
 
 // Класс - ядро
 class TransporCatalogue {
@@ -48,36 +47,41 @@ public:
     void AddBus(Bus&& bus);
 
     // Функции поиска сущностей остановка/автобус(маршрут)
-    Stop* FindStop(std::string_view stop);
-    Bus* FindBus(std::string_view bus_name);
+    const Stop* FindStop(std::string_view stop) const;
+    const Bus* FindBus(std::string_view bus_name) const;
 
-    // Функции получения дистанций между остановок
-    double GeoDistanceBetweenStops(const Bus* bus); // Дистанция по гео данным
-    size_t RouteDistance(const Bus* bus);           // Дистанция по реальному пути(дорогам)
+    // Структура нужной для вывода информации о маршруте(автобусе)
+    struct BusInfo
+    {
+        double geo_distance_between_stops = 0.0;
+        double route_distance = 0.0;
+        size_t unique_stops_on_bus = 0;
+    };
+
+    // Функция получения нужной информации о маршруте(автобусе)
+    const BusInfo GetBusInfo(const Bus* bus) const;
     
-    // Функция получения количества остановок на маршруте(автобусе)
-    size_t UniqueStopsOnBus(const Bus* bus);
-
     // Функция получения маршрутов(автобусов) для остановки
-    std::set<std::string_view> GetRoutsOnStop(std::string_view stop_name);
+    const std::set<std::string_view> GetRoutsOnStop(std::string_view stop_name) const;
 
     // Функция добавления реальной дистанции(по дорогам) для остановок (остановка -> {остановка -> расстояние})
-    void AddStopToStopLenght (std::string_view stop_from, std::string_view stop_to, size_t& lenght);
-                            
+    void SetStopToStopDistance(std::string_view stop_from, std::string_view stop_to, size_t lenght);
 
 private:
 
     // Хранилище остановок
-    std::list<Stop> stops_;
+    std::deque<Stop> stops_;
     // Быстрый доступ к хранилищю остановок
     std::unordered_map<std::string_view, Stop*> fast_stop_get_;
     // Хранилище автобусов(маршрутов)
-    std::list<Bus> buses_;
+    std::deque<Bus> buses_;
     // Быстрый доступ к хранилищю автобусов(маршрутов)
     std::unordered_map<std::string_view, Bus*> fast_bus_get_;
     // Хранилище реальной дистанции(по дорогам) между остановками (остановка -> {остановка -> расстояние})
-    std::unordered_map<std::string_view, std::unordered_map<std::string_view, size_t>> from_stop_to_stop_;
+    StopToStopDist from_stop_to_stop_;
 
 };
+
+}
 
 }

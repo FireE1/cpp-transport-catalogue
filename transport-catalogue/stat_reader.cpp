@@ -1,43 +1,44 @@
 #include "stat_reader.h"
 
+#include <iostream>
+#include <iomanip>
+#include <string>
+
+namespace TransporCatalogueLib
+{
+
 namespace Output
 {
 
-namespace detail
-{
-
 // Ввыводим информацию о маршруте(автобусе) и печатем ее
-void PrintBus(std::string_view bus_name, CatalogueCore::TransporCatalogue& cat) {
+static void PrintBus(std::string_view bus_name, const CatalogueCore::TransporCatalogue& cat) {
     // Получаем ссылку на автобус(маршрут) по заданному имени
     const CatalogueCore::Bus* bus = cat.FindBus(bus_name);
     // Если автобус(маршрут) не найден
     if (bus == nullptr)
     {
         // Печатаем об отсутствии автобуса(маршрута)
-        std::cout << "Bus "s << bus_name << ": not found"s << std::endl;
+        std::cout << "Bus " << bus_name << ": not found" << std::endl;
     }
     // Если автобус найден
     else
     {
-        // Сохраняем реальную дистанцию(по дорогам) между всеми остановками
-        double lenght = cat.RouteDistance(bus);
-        // Считаем разницу между реальной дистанцией(по дорогам) и гео дистанции
-        double curvature = lenght / cat.GeoDistanceBetweenStops(bus);
-        // Печатаем информацию об автобусе(маршруте)
-        std::cout << "Bus "s << bus->bus << ": "s << bus->stops_for_bus_.size() <<
-        " stops on route, "s << cat.UniqueStopsOnBus(bus) << " unique stops, "s <<
-        lenght << " route length, "s << std::setprecision(6) << curvature << " curvature"s 
-        << std::endl;
+        // Сохраняем всю нужную информацию для вывода и печатаем ее
+        auto info = cat.GetBusInfo(bus);
+        std::cout << "Bus " << bus->bus << ": " << bus->stops_for_bus_.size() <<
+        " stops on route, " << info.unique_stops_on_bus << " unique stops, " <<
+        info.route_distance << " route length, " << std::setprecision(6) << 
+        info.route_distance / info.geo_distance_between_stops << " curvature" << std::endl;
     }
 }
 
 // Ввыводим информацию о остановке и печатаем ее
-void PrintStop(std::string_view stop_name, CatalogueCore::TransporCatalogue& cat) {
+static void PrintStop(std::string_view stop_name, const CatalogueCore::TransporCatalogue& cat) {
     // Если остановка не найдена
     if (!cat.FindStop(stop_name))
     {
         // Печатаем об отсутствии остановки
-        std::cout << "Stop "s << stop_name << ": not found"s << std::endl;
+        std::cout << "Stop " << stop_name << ": not found" << std::endl;
     }
     // Если остановка найдена
     else
@@ -48,26 +49,24 @@ void PrintStop(std::string_view stop_name, CatalogueCore::TransporCatalogue& cat
         if (buses.empty())
         {
             // Печатаем об отсутствии маршрутов
-            std::cout << "Stop "s << stop_name << ": no buses"s << std::endl;
+            std::cout << "Stop " << stop_name << ": no buses" << std::endl;
         }
         // Если такие имеются
         else
         {
             // Печатаем информацию о остановке
-            std::cout << "Stop "s << stop_name << ": buses"s;
+            std::cout << "Stop " << stop_name << ": buses";
             for (const auto& bus : buses)
             {
-                std::cout << " "s << bus;
+                std::cout << " " << bus;
             }
             std::cout << std::endl;
         }
     }
 }
 
-}
-
 // Считываем запрос на обработку и вывод из привязанного каталога
-void Reader(CatalogueCore::TransporCatalogue& cat) {
+void Reader(const CatalogueCore::TransporCatalogue& cat) {
     // string объект для количества вводимых команд
     std::string number_of_commands_str;
     // Получаем первую строчку - количество вводимых команд
@@ -88,16 +87,16 @@ void Reader(CatalogueCore::TransporCatalogue& cat) {
         // Отрезаем от строки команды ее тип
         queue = queue.substr(first_space + 1, queue.size());
         // Если тип команды Stop
-        if (command == "Stop"s)
+        if (command == "Stop")
         {
             // Ввыводим информацию о остановке и печатаем ее
-            detail::PrintStop(queue, cat);
+            PrintStop(queue, cat);
         }
         // Если тип команды Bus
-        else if (command == "Bus"s)
+        else if (command == "Bus")
         {
             // Ввыводим информацию о маршруте(автобусе) и печатем ее
-            detail::PrintBus(queue, cat);
+            PrintBus(queue, cat);
         }
         // При неккоректной команде пропускаем шаг
         else
@@ -105,6 +104,8 @@ void Reader(CatalogueCore::TransporCatalogue& cat) {
             continue;
         }
     }
+}
+
 }
 
 }

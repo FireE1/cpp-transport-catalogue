@@ -7,10 +7,13 @@
 #include "stat_reader.cpp"
 
 int main() {
+    {
+    using namespace TransporCatalogueLib;
     // Создаем каталог
     CatalogueCore::TransporCatalogue cat;
     // Производим ввод команд для записи
     Input::Reader(cat);
     // Производим ввод команд для вывода
     Output::Reader(cat);
+    }
 }

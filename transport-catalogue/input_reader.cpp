@@ -1,13 +1,19 @@
 #include "input_reader.h"
 
+#include <iostream>
+#include <string>
+#include <map>
+#include <utility>
+#include <vector>
+
+namespace TransporCatalogueLib
+{
+
 namespace Input
 {
 
-namespace detail
-{
-
 // Добавляем остановку в каталог и возвращаем дистанцию для остановок (остановка , {остановка -> расстояние})
-std::pair<std::string, std::map<std::string, size_t>> QueueAddStop(std::string& text, CatalogueCore::TransporCatalogue& cat) {
+static std::pair<std::string, std::map<std::string, size_t>> QueueAddStop(std::string& text, CatalogueCore::TransporCatalogue& cat) {
     // Находим конец для названия остановки
     auto two_points = text.find_first_of(':');
     // Находим разделение между широтой и долготой остановки
@@ -21,7 +27,7 @@ std::pair<std::string, std::map<std::string, size_t>> QueueAddStop(std::string& 
     // double объект для хранения долготы
     double longitude = std::stod(text.substr(lat_long_devider + 2, posible_distances_dev));
     // Добавляем остановку в каталог
-    cat.AddStop({stop_name, latitude, longitude, {}});
+    cat.AddStop({stop_name, {latitude, longitude}, {}});
     // Создаем пустой объект для остановки и дистанции до нее
     std::map<std::string, size_t> distances_to_stops;
     // Находим начало обозначений дистанций
@@ -58,7 +64,7 @@ std::pair<std::string, std::map<std::string, size_t>> QueueAddStop(std::string& 
 }
 
 // Проверяем тип проходимого маршрута автобусом
-char IsRound(std::string& stops_queue) {
+static char IsRound(std::string& stops_queue) {
     // Ищем разделение остановок в команде
     std::string cut = stops_queue.substr(stops_queue.find_first_of(' ') + 1, stops_queue.size());
     if (cut[0] == '-' || cut[0] == '>')
@@ -71,13 +77,13 @@ char IsRound(std::string& stops_queue) {
 }
 
 // Добавляем автобус(маршрут) в каталог
-void QueueAddBus(std::string& text, CatalogueCore::TransporCatalogue& cat) {
+static void QueueAddBus(std::string& text, CatalogueCore::TransporCatalogue& cat) {
     // Находим конец для названия автобуса(маршрута)
     auto two_points = text.find_first_of(':');
     // string объект для хранения названия автобуса(маршрута)
     std::string bus_name = text.substr(0, two_points);
     // Создаем пустой контейнер для хранения ссылок на остановки, находящиеся на маршруте(автобусе)
-    std::list<CatalogueCore::Stop*> stops_for_bus;
+    std::vector<const CatalogueCore::Stop*> stops_for_bus;
     // Сохраняем команду без названия автобуса(маршрута)
     std::string stops_queue = text.substr(two_points + 2, text.size());
     // Проверяем тип проходимого маршрута автобусом и сохраняем знак разделения остановок в команде
@@ -96,29 +102,24 @@ void QueueAddBus(std::string& text, CatalogueCore::TransporCatalogue& cat) {
             break;
         }
     }
-    
     // При не кольцевом движении
     if (queue_simbol == '-')
     {
-        // Копируем маршрут автобуса
-        std::list<CatalogueCore::Stop*> route_back = stops_for_bus;
-        // Удаляем из копии последнюю остановку
-        route_back.pop_back();
-        // Переворачиваем копию маршрута
-        route_back.reverse();
-        // Вставляем копию в конец оригинального маршрута
-        stops_for_bus.splice(stops_for_bus.end(), route_back);
+        // Создаем пустой контейнер для хранения обратного маршрута
+        std::vector<const CatalogueCore::Stop*> route_back;
+        // Вставляем обратный маршрут без начальной для него точки
+        route_back.insert(route_back.end(), std::next(stops_for_bus.rbegin()), stops_for_bus.rend());
+        // // Вставляем копию в конец оригинального маршрута
+        stops_for_bus.insert(stops_for_bus.end(), route_back.begin(), route_back.end());
     }
     // Добавляем автобус(маршрут)
     cat.AddBus({bus_name, stops_for_bus});
 }
 
-}
-
 // Считываем запрос на добавление и обрабатываем в привязанный каталог
 void Reader(CatalogueCore::TransporCatalogue& cat)  {
     // Очередь для добавления автобусов(маршрутов)
-    std::list<std::string> bus_queue;
+    std::vector<std::string> bus_queue;
     // Очередь на добавление реальной дистанции(по дорогам) между остановками
     std::map<std::string, std::map<std::string, size_t>> lenght_queue;
     // string объект для количества вводимых команд
@@ -141,10 +142,10 @@ void Reader(CatalogueCore::TransporCatalogue& cat)  {
         // Отрезаем от строки команды ее тип
         queue = queue.substr(first_space + 1, queue.size());
         // Если тип команды Stop
-        if (command == "Stop"s)
+        if (command == "Stop")
         {
             // Добавляем сущность остановки и создаем объект дистанций для остановок (остановка , {остановка -> расстояние})
-            auto stop_to_sto_lenght = detail::QueueAddStop(queue, cat);
+            auto stop_to_sto_lenght = QueueAddStop(queue, cat);
             // Итерируемся по дистанциям между остановками
             for (const auto& [stop, lenght] : stop_to_sto_lenght.second)
             {
@@ -153,7 +154,7 @@ void Reader(CatalogueCore::TransporCatalogue& cat)  {
             }
         }
         // Если тип команды Bus
-        else if (command == "Bus"s)
+        else if (command == "Bus")
         {
             // Добавляем команду в очередь для добавления автобусов(маршрутов)
             bus_queue.push_back(queue);
@@ -170,15 +171,17 @@ void Reader(CatalogueCore::TransporCatalogue& cat)  {
         for (auto& [t_stop, lenght] : to_stop)
         {
             // Добавляем реальную дистанцию(по дорогам) для остановок (остановка -> {остановка -> расстояние})
-            cat.AddStopToStopLenght(stop, t_stop, lenght);
+            cat.SetStopToStopDistance(stop, t_stop, lenght);
         }
     }
     // Итерируемся по очереди для добавления автобусов(маршрутов)
     for (std::string& add_bus : bus_queue)
     {
         // Добавляем автобус(маршрут) в каталог
-        detail::QueueAddBus(add_bus, cat);
+        QueueAddBus(add_bus, cat);
     }
+}
+
 }
 
 }
