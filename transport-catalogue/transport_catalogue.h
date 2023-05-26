@@ -1,6 +1,7 @@
 #pragma once
 
 #include "geo.h"
+#include "geo.cpp"
 
 #include <unordered_map>
 #include <string>

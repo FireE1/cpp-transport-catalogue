@@ -1,19 +1,26 @@
-// #include "transport_catalogue.h"
+#include "transport_catalogue.h"
 #include "transport_catalogue.cpp"
 
-#include "input_reader.h"
-#include "input_reader.cpp"
-#include "stat_reader.h"
-#include "stat_reader.cpp"
+#include "json.h"
+#include "json.cpp"
+#include "json_reader.h"
+#include "json_reader.cpp"
+#include "svg.h"
+#include "svg.cpp"
+#include "map_renderer.h"
+#include "map_renderer.cpp"
+#include "request_handler.h"
+
+#include <iostream>
 
 int main() {
     {
-    using namespace TransporCatalogueLib;
-    // Создаем каталог
-    CatalogueCore::TransporCatalogue cat;
-    // Производим ввод команд для записи
-    Input::Reader(cat);
-    // Производим ввод команд для вывода
-    Output::Reader(cat);
+        using namespace TransporCatalogueLib;
+        CatalogueCore::TransporCatalogue cat;
+        Handler::InfoKeeper keeper;
+        keeper.GetInput() = json::Load(std::cin);
+        svg::map_render::MapRender drawing;
+        json::Reader(keeper, cat, drawing);
+        json::Print(keeper.GetOutput(), std::cout);
     }
 }
