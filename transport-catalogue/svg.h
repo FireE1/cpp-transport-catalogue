@@ -8,7 +8,8 @@
 #include <optional>
 #include <variant>
 
-namespace svg {
+namespace svg 
+{
 
 struct Rgb
 {

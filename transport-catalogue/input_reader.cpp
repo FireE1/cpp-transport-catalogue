@@ -83,7 +83,7 @@ static void QueueAddBus(std::string& text, CatalogueCore::TransporCatalogue& cat
     // string объект для хранения названия автобуса(маршрута)
     std::string bus_name = text.substr(0, two_points);
     // Создаем пустой контейнер для хранения ссылок на остановки, находящиеся на маршруте(автобусе)
-    std::vector<const CatalogueCore::Stop*> stops_for_bus;
+    std::vector<const Domain::Stop*> stops_for_bus;
     // Сохраняем команду без названия автобуса(маршрута)
     std::string stops_queue = text.substr(two_points + 2, text.size());
     // Проверяем тип проходимого маршрута автобусом и сохраняем знак разделения остановок в команде
@@ -106,7 +106,7 @@ static void QueueAddBus(std::string& text, CatalogueCore::TransporCatalogue& cat
     if (queue_simbol == '-')
     {
         // Создаем пустой контейнер для хранения обратного маршрута
-        std::vector<const CatalogueCore::Stop*> route_back;
+        std::vector<const Domain::Stop*> route_back;
         // Вставляем обратный маршрут без начальной для него точки
         route_back.insert(route_back.end(), std::next(stops_for_bus.rbegin()), stops_for_bus.rend());
         // // Вставляем копию в конец оригинального маршрута

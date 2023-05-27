@@ -1,13 +1,13 @@
 #include "json.h"
 
-using namespace std;
+using namespace std::literals;
 
 namespace json
 {
 
 namespace {
 
-Node LoadNode(istream& input);
+Node LoadNode(std::istream& input);
  
 std::string LoadLiteral(std::istream& input) {
     std::string str;
@@ -261,31 +261,8 @@ Node LoadNode(std::istream& input) {
 
 }  // namespace
 
-Node::Node(std::nullptr_t)
-    : Node() {}
-
-Node::Node(Array array)
-    : value_(std::move(array)) {
-}
-
-Node::Node(Dict map)
-    : value_(std::move(map)) {
-}
-
-Node::Node(int value)
-    : value_(value) {
-}
-
-Node::Node(std::string value)
-    : value_(std::move(value)) {
-}
-
-Node::Node(bool value)
-    : value_(value) {
-}
-
-Node::Node(double value)
-    : value_(value) {
+Node::Node(NodeVariations node) 
+    : value_(node) {
 }
 
 const Array& Node::AsArray() const {
@@ -312,7 +289,7 @@ int Node::AsInt() const {
     return std::get<int>(value_);
 }
 
-const string& Node::AsString() const {
+const std::string& Node::AsString() const {
     if (!IsString())
     {
         throw std::logic_error("is not string");
@@ -371,14 +348,14 @@ bool Node::IsMap() const {
 }
 
 Document::Document(Node root)
-    : root_(move(root)) {
+    : root_(std::move(root)) {
 }
 
 const Node& Document::GetRoot() const {
     return root_;
 }
 
-Document Load(istream& input) {
+Document Load(std::istream& input) {
     return Document{LoadNode(input)};
 }
 

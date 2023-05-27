@@ -5,10 +5,15 @@
 #include "map_renderer.h"
 #include "request_handler.h"
 
-namespace json
+namespace TransporCatalogueLib
+{
+
+namespace jsonOperator
 {
 
 // Считываем запрос на добавлениеб обрабатываем в привязанный каталог, сохраняем отдельную информацию в удобные для взаимодействия хранилища
-void Reader(Handler::InfoKeeper& keeper, TransporCatalogueLib::CatalogueCore::TransporCatalogue& cat, svg::map_render::MapRender& map);
+void Reader(Handler::InfoKeeper& keeper, CatalogueCore::TransporCatalogue& cat, map_render::MapRender& map);
+
+}
 
 }

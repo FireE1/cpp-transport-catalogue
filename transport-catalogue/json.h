@@ -25,13 +25,7 @@ public:
    using NodeVariations = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
 
     Node() = default;
-    Node(std::nullptr_t);
-    Node(Array array);
-    Node(Dict map);
-    Node(int value);
-    Node(std::string value);
-    Node(bool value);
-    Node(double value);
+    Node(NodeVariations node);
 
     const Array& AsArray() const;
     const Dict& AsMap() const;

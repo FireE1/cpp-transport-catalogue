@@ -5,7 +5,7 @@
 #include <set>
 #include <sstream>
 
-namespace svg
+namespace TransporCatalogueLib
 {
 
 namespace map_render
@@ -13,9 +13,9 @@ namespace map_render
 
 struct BasicInfo {
 
-    BasicInfo(Handler::InfoKeeper& keeper, const TransporCatalogueLib::CatalogueCore::TransporCatalogue& cat) {
-        buses = keeper.GetAllBuses();
-        stops = keeper.GetAllStops();
+    BasicInfo(std::set<std::pair<std::string, bool>> buses_, std::set<std::string> stops_, const CatalogueCore::TransporCatalogue& cat) {
+        buses = buses_;
+        stops = stops_;
         for (auto [bus_name, _] : buses)
         {
             std::vector<Geo::Coordinates> to_save;
@@ -39,22 +39,22 @@ struct BasicInfo {
 
 };
 
-static void AddRoutsLines(BasicInfo& basic_info, Document& to_draw, RenderSettings& settings) {
+static void AddRoutsLines(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings) {
     BasicInfo info = basic_info;
-    std::vector<Polyline> lines;
+    std::vector<svg::Polyline> lines;
     int color_id = 0;
     const SphereProjector proj(info.raw_cords.begin(), info.raw_cords.end(), settings.width, settings.height, settings.padding);
     for (auto route : info.geo_by_rout)
     {
-        Polyline line_to_add;
-        line_to_add.SetFillColor(NoneColor)
+        svg::Polyline line_to_add;
+        line_to_add.SetFillColor(svg::NoneColor)
                    .SetStrokeColor(settings.color_palette[color_id])
                    .SetStrokeWidth(settings.line_width)
-                   .SetStrokeLineCap(StrokeLineCap::ROUND)
-                   .SetStrokeLineJoin(StrokeLineJoin::ROUND);
+                   .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+                   .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
         for (auto cord : route)
         {
-            const Point screen_cord = proj(cord);
+            const svg::Point screen_cord = proj(cord);
             line_to_add.AddPoint(screen_cord);    
         }
         if(settings.color_palette.size() == color_id + 1)
@@ -73,7 +73,7 @@ static void AddRoutsLines(BasicInfo& basic_info, Document& to_draw, RenderSettin
     }
 }
 
-void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& settings, const TransporCatalogueLib::CatalogueCore::TransporCatalogue& cat) {
+void AddRoutsNames(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
     BasicInfo info = basic_info;
     int color_id = 0;
     const SphereProjector proj(info.raw_cords.begin(), info.raw_cords.end(), settings.width, settings.height, settings.padding);
@@ -86,7 +86,7 @@ void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
         if (is_round == true)
         {
             auto stop = cat.FindBus(bus_name)->stops_for_bus_.front()->coordinates;
-            Text back_text;
+            svg::Text back_text;
             back_text.SetData(bus_name)
                      .SetPosition(proj(stop))
                      .SetOffset(settings.bus_label_offset)
@@ -96,10 +96,10 @@ void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
                      .SetFillColor(settings.underlayer_color)
                      .SetStrokeColor(settings.underlayer_color)
                      .SetStrokeWidth(settings.underlayer_width)
-                     .SetStrokeLineCap(StrokeLineCap::ROUND)
-                     .SetStrokeLineJoin(StrokeLineJoin::ROUND);
+                     .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+                     .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
             to_draw.Add(back_text);
-            Text front_text;
+            svg::Text front_text;
             front_text.SetData(bus_name)
                       .SetPosition(proj(stop))
                       .SetOffset(settings.bus_label_offset)
@@ -121,7 +121,7 @@ void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
         {
             {
                 auto stop = cat.FindBus(bus_name)->stops_for_bus_[0]->coordinates;
-                Text back_text;
+                svg::Text back_text;
                 back_text.SetData(bus_name)
                          .SetPosition(proj(stop))
                          .SetOffset(settings.bus_label_offset)
@@ -131,10 +131,10 @@ void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
                          .SetFillColor(settings.underlayer_color)
                          .SetStrokeColor(settings.underlayer_color)
                          .SetStrokeWidth(settings.underlayer_width)
-                         .SetStrokeLineCap(StrokeLineCap::ROUND)
-                         .SetStrokeLineJoin(StrokeLineJoin::ROUND);
+                         .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+                         .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
                 to_draw.Add(back_text);
-                Text front_text;
+                svg::Text front_text;
                 front_text.SetData(bus_name)
                           .SetPosition(proj(stop))
                           .SetOffset(settings.bus_label_offset)
@@ -159,7 +159,7 @@ void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
                     }
                     continue;
                 }
-                Text back_text;
+                svg::Text back_text;
                 back_text.SetData(bus_name)
                          .SetPosition(proj(stop->coordinates))
                          .SetOffset(settings.bus_label_offset)
@@ -169,10 +169,10 @@ void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
                          .SetFillColor(settings.underlayer_color)
                          .SetStrokeColor(settings.underlayer_color)
                          .SetStrokeWidth(settings.underlayer_width)
-                         .SetStrokeLineCap(StrokeLineCap::ROUND)
-                         .SetStrokeLineJoin(StrokeLineJoin::ROUND);
+                         .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+                         .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
                 to_draw.Add(back_text);
-                Text front_text;
+                svg::Text front_text;
                 front_text.SetData(bus_name)
                           .SetPosition(proj(stop->coordinates))
                           .SetOffset(settings.bus_label_offset)
@@ -194,7 +194,7 @@ void AddRoutsNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
     }
 }
 
-void AddStopPoints(BasicInfo& basic_info, Document& to_draw, RenderSettings& settings, const TransporCatalogueLib::CatalogueCore::TransporCatalogue& cat) {
+void AddStopPoints(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
     BasicInfo info = basic_info;
     const SphereProjector proj(info.raw_cords.begin(), info.raw_cords.end(), settings.width, settings.height, settings.padding);
     for (auto stop_name : info.stops)
@@ -203,7 +203,7 @@ void AddStopPoints(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
         {
             continue;
         }
-        Circle bus_stop;
+        svg::Circle bus_stop;
         Geo::Coordinates stop_cords = cat.FindStop(stop_name)->coordinates;
         bus_stop.SetCenter(proj(stop_cords))
                 .SetRadius(settings.stop_radius)
@@ -213,7 +213,7 @@ void AddStopPoints(BasicInfo& basic_info, Document& to_draw, RenderSettings& set
 
 }
 
-void AddStopNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& settings, const TransporCatalogueLib::CatalogueCore::TransporCatalogue& cat) {
+void AddStopNames(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
     BasicInfo info = basic_info;
     const SphereProjector proj(info.raw_cords.begin(), info.raw_cords.end(), settings.width, settings.height, settings.padding);
     for (auto stop_name : info.stops)
@@ -223,7 +223,7 @@ void AddStopNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& sett
             continue;
         }
         Geo::Coordinates stop_cords = cat.FindStop(stop_name)->coordinates;
-        Text back_text;
+        svg::Text back_text;
         back_text.SetPosition(proj(stop_cords))
                  .SetOffset(settings.stop_label_offset)
                  .SetFontSize(settings.stop_label_font_size)
@@ -232,10 +232,10 @@ void AddStopNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& sett
                  .SetFillColor(settings.underlayer_color)
                  .SetStrokeColor(settings.underlayer_color)
                  .SetStrokeWidth(settings.underlayer_width)
-                 .SetStrokeLineCap(StrokeLineCap::ROUND)
-                 .SetStrokeLineJoin(StrokeLineJoin::ROUND);
+                 .SetStrokeLineCap(svg::StrokeLineCap::ROUND)
+                 .SetStrokeLineJoin(svg::StrokeLineJoin::ROUND);
         to_draw.Add(back_text);
-        Text front_text;
+        svg::Text front_text;
         front_text.SetData(stop_name)
                   .SetPosition(proj(stop_cords))
                   .SetOffset(settings.stop_label_offset)
@@ -246,9 +246,9 @@ void AddStopNames(BasicInfo& basic_info, Document& to_draw, RenderSettings& sett
     }
 }
 
-std::ostringstream MapRender::Draw(const TransporCatalogueLib::CatalogueCore::TransporCatalogue& cat, Handler::InfoKeeper& keeper) {
-    Document to_draw;
-    BasicInfo basic_info(keeper, cat);
+std::ostringstream MapRender::Draw(const CatalogueCore::TransporCatalogue& cat, std::set<std::pair<std::string, bool>> buses, std::set<std::string> stops) {
+    svg::Document to_draw;
+    BasicInfo basic_info(buses, stops, cat);
     AddRoutsLines(basic_info, to_draw, settings_);
     AddRoutsNames(basic_info, to_draw, settings_, cat);
     AddStopPoints(basic_info, to_draw, settings_, cat);

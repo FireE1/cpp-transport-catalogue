@@ -2,6 +2,7 @@
 
 #include "geo.h"
 #include "geo.cpp"
+#include "domain.h"
 
 #include <unordered_map>
 #include <string>
@@ -16,40 +17,40 @@ namespace TransporCatalogueLib
 namespace CatalogueCore
 {
 
-// Структура автобуса(маршрута)
-struct Bus;
+// // Структура автобуса(маршрута)
+// struct Bus;
 
-// Структура остановки
-struct Stop {
-    // Название остановки
-    std::string stop_name;
-    // Гео данные(долгота, широта)
-    Geo::Coordinates coordinates;
-    // Отсортированное хранилище маршрутов(автобусов), проходящих через остановку
-    std::vector<Bus*>routs;
-};
+// // Структура остановки
+// struct Stop {
+//     // Название остановки
+//     std::string stop_name;
+//     // Гео данные(долгота, широта)
+//     Geo::Coordinates coordinates;
+//     // Отсортированное хранилище маршрутов(автобусов), проходящих через остановку
+//     std::vector<Bus*>routs;
+// };
 
-// Структура автобуса(маршрута)
-struct Bus {
-    // Название пвтобуса(маршрута)
-    std::string bus;
-    // Хранилище ссылок на остановки, находящиеся на маршруте(автобусе)
-    std::vector<const Stop*> stops_for_bus_;
-};
+// // Структура автобуса(маршрута)
+// struct Bus {
+//     // Название пвтобуса(маршрута)
+//     std::string bus;
+//     // Хранилище ссылок на остановки, находящиеся на маршруте(автобусе)
+//     std::vector<const Stop*> stops_for_bus_;
+// };
 
-typedef std::unordered_map<std::string_view, std::unordered_map<std::string_view, size_t>> StopToStopDist;
+using StopToStopDist = std::unordered_map<std::string_view, std::unordered_map<std::string_view, size_t>>;
 
 // Класс - ядро
 class TransporCatalogue {
 public:
 
     // Функции добавления сущностей остановка/автобус(маршрут)
-    void AddStop(Stop&& stop);
-    void AddBus(Bus&& bus);
+    void AddStop(Domain::Stop&& stop);
+    void AddBus(Domain::Bus&& bus);
 
     // Функции поиска сущностей остановка/автобус(маршрут)
-    const Stop* FindStop(std::string_view stop) const;
-    const Bus* FindBus(std::string_view bus_name) const;
+    const Domain::Stop* FindStop(std::string_view stop) const;
+    const Domain::Bus* FindBus(std::string_view bus_name) const;
 
     // Структура нужной для вывода информации о маршруте(автобусе)
     struct BusInfo
@@ -60,7 +61,7 @@ public:
     };
 
     // Функция получения нужной информации о маршруте(автобусе)
-    const BusInfo GetBusInfo(const Bus* bus) const;
+    const BusInfo GetBusInfo(const Domain::Bus* bus) const;
     
     // Функция получения маршрутов(автобусов) для остановки
     const std::set<std::string_view> GetRoutsOnStop(std::string_view stop_name) const;
@@ -71,13 +72,13 @@ public:
 private:
 
     // Хранилище остановок
-    std::deque<Stop> stops_;
+    std::deque<Domain::Stop> stops_;
     // Быстрый доступ к хранилищю остановок
-    std::unordered_map<std::string_view, Stop*> fast_stop_get_;
+    std::unordered_map<std::string_view, Domain::Stop*> fast_stop_get_;
     // Хранилище автобусов(маршрутов)
-    std::deque<Bus> buses_;
+    std::deque<Domain::Bus> buses_;
     // Быстрый доступ к хранилищю автобусов(маршрутов)
-    std::unordered_map<std::string_view, Bus*> fast_bus_get_;
+    std::unordered_map<std::string_view, Domain::Bus*> fast_bus_get_;
     // Хранилище реальной дистанции(по дорогам) между остановками (остановка -> {остановка -> расстояние})
     StopToStopDist from_stop_to_stop_;
 

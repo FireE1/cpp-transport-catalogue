@@ -4,19 +4,18 @@
 #include "transport_catalogue.h"
 #include "geo.h"
 #include "request_handler.h"
+#include "domain.h"
 
 #include <vector>
 #include <optional>
 #include <cstdlib>
 #include <algorithm>
 
-namespace svg
+namespace TransporCatalogueLib
 {
 
 namespace map_render
 {
-
-
 
 class SphereProjector {
 public:
@@ -91,37 +90,22 @@ private:
 
 };
 
-struct RenderSettings
-{
-    double width = 0.0;
-    double height = 0.0;
-    double padding = 0.0;
-    double line_width = 0.0;
-    double stop_radius = 0.0;
-    int bus_label_font_size = 0;
-    Point bus_label_offset;
-    int stop_label_font_size = 0;
-    Point stop_label_offset;
-    Color underlayer_color;
-    double underlayer_width = 0.0;
-    std::vector<Color> color_palette;
-};
-
 class MapRender {
 public:
 
     MapRender() = default;
-    MapRender(RenderSettings& settings) : settings_(settings) {}
+    explicit MapRender(const Domain::RenderSettings& settings) : settings_(settings) {}
 
-    std::ostringstream Draw(const TransporCatalogueLib::CatalogueCore::TransporCatalogue& cat, Handler::InfoKeeper& keeper);
+    std::ostringstream Draw(const CatalogueCore::TransporCatalogue& cat, std::set<std::pair<std::string, bool>> buses, std::set<std::string> stops);
 
-    MapRender operator=(MapRender other) {
-        return settings_ = other.settings_;
+    MapRender& operator=(const MapRender&& other) {
+        settings_ = other.settings_;
+        return *this;
     }
 
 private:
 
-    RenderSettings settings_;
+    Domain::RenderSettings settings_;
 
 };
 

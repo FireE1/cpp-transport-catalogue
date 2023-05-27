@@ -13,7 +13,7 @@ namespace Output
 // Ввыводим информацию о маршруте(автобусе) и печатем ее
 static void PrintBus(std::string_view bus_name, const CatalogueCore::TransporCatalogue& cat) {
     // Получаем ссылку на автобус(маршрут) по заданному имени
-    const CatalogueCore::Bus* bus = cat.FindBus(bus_name);
+    const Domain::Bus* bus = cat.FindBus(bus_name);
     // Если автобус(маршрут) не найден
     if (bus == nullptr)
     {

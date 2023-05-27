@@ -11,21 +11,21 @@ namespace CatalogueCore
 {
 
 // Функция добавления сущности остановки
-void TransporCatalogue::AddStop(Stop&& stop) {
+void TransporCatalogue::AddStop(Domain::Stop&& stop) {
     // Добавляем остановку в хранилище
     stops_.push_back(std::move(stop));
     // Создаем ссылку на только что добвленную остановку
-    Stop* buff = &stops_.back();
+    Domain::Stop* buff = &stops_.back();
     // Добавляем ссулку на остановку в хранилище для быстрого доступа по имени этой же остановки
     fast_stop_get_.insert({buff->stop_name, buff});
 }
 
 // Функция добавления сущности автобуса(маршрута)
-void TransporCatalogue::AddBus(Bus&& bus) {
+void TransporCatalogue::AddBus(Domain::Bus&& bus) {
     // Добавляем автобус(маршрут) в хранилище
     buses_.push_back(std::move(bus));
     // Создаем ссылку на только что добвленный автобус(маршрут)
-    Bus* buff = &buses_.back();
+    Domain::Bus* buff = &buses_.back();
     // Добавляем ссулку на автобус(маршрут) в хранилище для быстрого доступа по имени этого же автобуса(маршрута)
     fast_bus_get_.insert({buff->bus, buff});
     // Проходимся по списку остановок на маршруте(автобусе)
@@ -37,7 +37,7 @@ void TransporCatalogue::AddBus(Bus&& bus) {
 }
 
 // Функция поиска сущности остановки по ее имени
-const Stop* TransporCatalogue::FindStop(std::string_view stop_name) const {
+const Domain::Stop* TransporCatalogue::FindStop(std::string_view stop_name) const {
     try 
     {
         // При наличии остановки с заданным именем, выдаем на нее ссылку
@@ -51,7 +51,7 @@ const Stop* TransporCatalogue::FindStop(std::string_view stop_name) const {
 }
 
 // Функция поиска сущности автобуса(маршрута) по его имени
-const Bus* TransporCatalogue::FindBus(std::string_view bus_name) const {
+const Domain::Bus* TransporCatalogue::FindBus(std::string_view bus_name) const {
     try 
     {
         // При наличии автобуса(маршрута) с заданным именем, выдаем на него ссылку
@@ -65,20 +65,20 @@ const Bus* TransporCatalogue::FindBus(std::string_view bus_name) const {
 }
 
 // Функция подсчета дистанции между всеми остановкими на маршруте(автобусе) по гео данным
-static const double GeoDistanceBetweenStops(const Bus* bus) {
+static const double GeoDistanceBetweenStops(const Domain::Bus* bus) {
     return std::transform_reduce(std::next(bus->stops_for_bus_.begin()), bus->stops_for_bus_.end(),
-            bus->stops_for_bus_.begin(), 0.0, std::plus<>{}, [](const Stop* lhs, const Stop* rhs){
+            bus->stops_for_bus_.begin(), 0.0, std::plus<>{}, [](const Domain::Stop* lhs, const Domain::Stop* rhs){
                 return Geo::ComputeDistance({(*lhs).coordinates.lat, (*lhs).coordinates.lng},
                 {(*rhs).coordinates.lat, (*rhs).coordinates.lng});
             });
 }
 
 // Функция подсчета дистанции между всеми остановкими на маршруте(автобусе) по реальным данным(дорогам)
-static const double RouteDistance(const Bus* bus, const StopToStopDist& distances) {
+static const double RouteDistance(const Domain::Bus* bus, const StopToStopDist& distances) {
     // Пустое значение для выдачи финального результата функции
     size_t to_ret = 0;
     // Копируем в контейнер список остановок для маршрута(автобуса)
-    std::vector<const Stop*> route = bus->stops_for_bus_;
+    std::vector<const Domain::Stop*> route = bus->stops_for_bus_;
     // Итерируемся по списку остановок до мемента итерации на предпоследнюю остановку
     for (size_t i = 0; i < bus->stops_for_bus_.size() - 1; ++i)
     {
@@ -97,16 +97,16 @@ static const double RouteDistance(const Bus* bus, const StopToStopDist& distance
 }
 
 // Функция получения количества остановок на маршруте(автобусе)
-static const size_t UniqueStopsOnBus(const Bus* bus) {
+static const size_t UniqueStopsOnBus(const Domain::Bus* bus) {
     // Пустое значение для выдачи финального результата функции
-    std::unordered_set<const Stop*> to_ret;
+    std::unordered_set<const Domain::Stop*> to_ret;
     // Перекидываем список ссылок остановок в возвращаемое значение
     to_ret.insert(bus->stops_for_bus_.begin(), bus->stops_for_bus_.end());
     // Возвращаем размер ссылок на остановки
     return to_ret.size();
 }
 
-const TransporCatalogue::BusInfo TransporCatalogue::GetBusInfo(const Bus* bus) const {
+const TransporCatalogue::BusInfo TransporCatalogue::GetBusInfo(const Domain::Bus* bus) const {
     return {GeoDistanceBetweenStops(bus), RouteDistance(bus, from_stop_to_stop_), UniqueStopsOnBus(bus)};
 }
 

@@ -6,6 +6,9 @@
 #include <string>
 #include <utility>
 
+namespace TransporCatalogueLib
+{
+
 namespace Handler
 {
 
@@ -27,5 +30,7 @@ private:
     std::set<std::string> name_of_stops;
 
 };
+
+}
 
 }
