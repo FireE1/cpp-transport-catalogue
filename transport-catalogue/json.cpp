@@ -262,7 +262,7 @@ Node LoadNode(std::istream& input) {
 }  // namespace
 
 Node::Node(NodeVariations node) 
-    : value_(node) {
+    : value_(std::move(node)) {
 }
 
 const Array& Node::AsArray() const {

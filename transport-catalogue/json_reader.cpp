@@ -1,6 +1,8 @@
 #include "json_reader.h"
 #include "svg.h"
 #include "domain.h"
+#include "json_builder.h"
+#include "json_builder.cpp"
 
 #include <vector>
 #include <iostream>
@@ -151,7 +153,7 @@ map_render::MapRender ParseRender(json::Node& root) {
     // Преаброзуем команду в тип Dict
     json::Dict raw_settings = root.AsMap();
     // Объект для сохранения результата
-    Domain::RenderSettings to_ret;
+    map_render::RenderSettings to_ret;
     // Получаем широту полотна
     to_ret.width = raw_settings.at("width").AsDouble();
     // Получаем высоту полотна
@@ -206,38 +208,44 @@ std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::Transpo
         {
             // Получаем автобус(маршрут)
             auto bus = cat.FindBus(request.at("name").AsString());
-            // Объект для сохранения результата
-            json::Dict to_emplace;
+            // Объект для построения результата
+            json::Builder to_emplace;
             // Если автобуса(маршрута) не существует
             if (bus == nullptr)
             {
-                to_emplace.emplace("request_id", json::Node(request.at("id").AsInt()));
-                to_emplace.emplace("error_message", json::Node(std::string("not found")));
+                to_emplace.StartDict()
+                            .Key("request_id").Value(request.at("id").AsInt())
+                            .Key("error_message").Value("not found")
+                          .EndDict();
             }
             // Если автобус(маршрут) существует
             else
             {
                 auto bus_info = cat.GetBusInfo(bus);
                 double curvature = bus_info.route_distance / bus_info.geo_distance_between_stops;
-                to_emplace.emplace("curvature", json::Node(double(curvature)));
-                to_emplace.emplace("request_id", json::Node(request.at("id").AsInt()));
-                to_emplace.emplace("route_length", json::Node(double(bus_info.route_distance)));
-                to_emplace.emplace("stop_count", json::Node(int(bus->stops_for_bus_.size())));
-                to_emplace.emplace("unique_stop_count", json::Node(int(bus_info.unique_stops_on_bus)));
+                to_emplace.StartDict()
+                            .Key("curvature").Value(curvature)
+                            .Key("request_id").Value(request.at("id").AsInt())
+                            .Key("route_length").Value(bus_info.route_distance)
+                            .Key("stop_count").Value(int(bus->stops_for_bus_.size()))
+                            .Key("unique_stop_count").Value(int(bus_info.unique_stops_on_bus))
+                          .EndDict();
             }
             // Добавить собранный объект в вывод
-            to_print.push_back(json::Node(to_emplace));
+            to_print.push_back(to_emplace.Build());
         }
         // Если тип запроса Stop
         else if (type == "Stop")
         {
-            // Объект для сохранения результата
-            json::Dict to_emplace;
+            // Объект для построения результата
+            json::Builder to_emplace;
             // Если остановка не существует
             if (!cat.FindStop(request.at("name").AsString()))
             {
-                to_emplace.emplace("request_id", json::Node(request.at("id").AsInt()));
-                to_emplace.emplace("error_message", json::Node(std::string("not found")));
+                to_emplace.StartDict()
+                            .Key("request_id").Value(request.at("id").AsInt())
+                            .Key("error_message").Value("not found")
+                          .EndDict();
             }
             // Если остановка существует
             else
@@ -247,11 +255,13 @@ std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::Transpo
                 {
                     buses.push_back(json::Node(std::string(bus)));
                 }
-                to_emplace.emplace("buses", json::Node(buses));
-                to_emplace.emplace("request_id", json::Node(request.at("id").AsInt()));
+                to_emplace.StartDict()
+                            .Key("buses").Value(buses)
+                            .Key("request_id").Value(request.at("id").AsInt())
+                          .EndDict();
             }
             // Добавить собранный объект в вывод
-            to_print.push_back(json::Node(to_emplace));
+            to_print.push_back(to_emplace.Build());
         }
         // Если тип запроса Map
         else if (type == "Map")
@@ -259,12 +269,14 @@ std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::Transpo
             // Получаем собранную карту
             std::ostringstream get_map = map.Draw(cat, keeper.GetAllBuses(), keeper.GetAllStops());
             std::string map_to_json = get_map.str();
-            // Объект для сохранения результата
-            json::Dict map_data;
-            map_data.emplace("map", json::Node(map_to_json));
-            map_data.emplace("request_id", json::Node(request.at("id").AsInt()));
+            // Объект для построения результата
+            json::Builder map_data;
+            map_data.StartDict()
+                      .Key("map").Value(map_to_json)
+                      .Key("request_id").Value(request.at("id").AsInt())
+                    .EndDict();
             // Добавить собранный объект в вывод
-            to_print.push_back(json::Node(map_data));
+            to_print.push_back(map_data.Build());
         }
     }
     return to_print;

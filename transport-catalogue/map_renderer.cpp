@@ -14,8 +14,8 @@ namespace map_render
 struct BasicInfo {
 
     BasicInfo(std::set<std::pair<std::string, bool>> buses_, std::set<std::string> stops_, const CatalogueCore::TransporCatalogue& cat) {
-        buses = buses_;
-        stops = stops_;
+        buses = std::move(buses_);
+        stops = std::move(stops_);
         for (auto [bus_name, _] : buses)
         {
             std::vector<Geo::Coordinates> to_save;
@@ -39,7 +39,7 @@ struct BasicInfo {
 
 };
 
-static void AddRoutsLines(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings) {
+static void AddRoutsLines(BasicInfo& basic_info, svg::Document& to_draw, RenderSettings& settings) {
     BasicInfo info = basic_info;
     std::vector<svg::Polyline> lines;
     int color_id = 0;
@@ -73,7 +73,7 @@ static void AddRoutsLines(BasicInfo& basic_info, svg::Document& to_draw, Domain:
     }
 }
 
-void AddRoutsNames(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
+void AddRoutsNames(BasicInfo& basic_info, svg::Document& to_draw, RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
     BasicInfo info = basic_info;
     int color_id = 0;
     const SphereProjector proj(info.raw_cords.begin(), info.raw_cords.end(), settings.width, settings.height, settings.padding);
@@ -194,7 +194,7 @@ void AddRoutsNames(BasicInfo& basic_info, svg::Document& to_draw, Domain::Render
     }
 }
 
-void AddStopPoints(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
+void AddStopPoints(BasicInfo& basic_info, svg::Document& to_draw, RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
     BasicInfo info = basic_info;
     const SphereProjector proj(info.raw_cords.begin(), info.raw_cords.end(), settings.width, settings.height, settings.padding);
     for (auto stop_name : info.stops)
@@ -213,7 +213,7 @@ void AddStopPoints(BasicInfo& basic_info, svg::Document& to_draw, Domain::Render
 
 }
 
-void AddStopNames(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
+void AddStopNames(BasicInfo& basic_info, svg::Document& to_draw, RenderSettings& settings, const CatalogueCore::TransporCatalogue& cat) {
     BasicInfo info = basic_info;
     const SphereProjector proj(info.raw_cords.begin(), info.raw_cords.end(), settings.width, settings.height, settings.padding);
     for (auto stop_name : info.stops)
@@ -248,7 +248,7 @@ void AddStopNames(BasicInfo& basic_info, svg::Document& to_draw, Domain::RenderS
 
 std::ostringstream MapRender::Draw(const CatalogueCore::TransporCatalogue& cat, std::set<std::pair<std::string, bool>> buses, std::set<std::string> stops) {
     svg::Document to_draw;
-    BasicInfo basic_info(buses, stops, cat);
+    BasicInfo basic_info(std::move(buses), std::move(stops), cat);
     AddRoutsLines(basic_info, to_draw, settings_);
     AddRoutsNames(basic_info, to_draw, settings_, cat);
     AddStopPoints(basic_info, to_draw, settings_, cat);

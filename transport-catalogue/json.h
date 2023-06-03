@@ -22,7 +22,7 @@ public:
 class Node {
 public:
    
-   using NodeVariations = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
+    using NodeVariations = std::variant<std::nullptr_t, Array, Dict, bool, int, double, std::string>;
 
     Node() = default;
     Node(NodeVariations node);
