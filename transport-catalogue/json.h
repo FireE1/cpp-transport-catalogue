@@ -45,6 +45,9 @@ public:
 
     const NodeVariations& GetValue() const {return value_;}
 
+    Array& GetArray();
+    Dict& GetDict();
+
 private:
     NodeVariations value_;
 };

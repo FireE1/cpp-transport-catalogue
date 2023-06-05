@@ -265,6 +265,22 @@ Node::Node(NodeVariations node)
     : value_(std::move(node)) {
 }
 
+Array& Node::GetArray() {
+    if (!IsArray())
+    {
+        throw std::logic_error("is not array");
+    }
+    return std::get<Array>(value_);
+}
+
+Dict& Node::GetDict() {
+    if (!IsMap())
+    {
+        throw std::logic_error("is not dict");
+    }
+    return std::get<Dict>(value_);
+}
+
 const Array& Node::AsArray() const {
     if (!IsArray())
     {

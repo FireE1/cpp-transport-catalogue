@@ -3,16 +3,17 @@
 #include "json.h"
 
 #include <string>
+#include <memory>
 
 namespace json
 {
 
-class KeyBuilder;
-class DictBuilder;
-class ArrayBuilder;
-
 class Builder {
 public:
+
+    class KeyBuilder;
+    class DictBuilder;
+    class ArrayBuilder;
 
     KeyBuilder Key(std::string str);
 
@@ -41,7 +42,7 @@ private:
 private:
 
     Node root_;
-    std::vector<Node> nodes_stack_;
+    std::vector<std::unique_ptr<Node>> nodes_stack_;
 
 };
 
@@ -50,15 +51,15 @@ public:
 
     BuilderInputInterface(Builder& main);
 
-    KeyBuilder Key(std::string str);
+    Builder::KeyBuilder Key(std::string str);
 
     Builder& Value(Node::NodeVariations val);
 
-    DictBuilder StartDict();
+    Builder::DictBuilder StartDict();
 
     Builder& EndDict();
 
-    ArrayBuilder StartArray();
+    Builder::ArrayBuilder StartArray();
 
     Builder& EndArray();
 
@@ -68,7 +69,7 @@ protected:
 
 };
 
-class KeyBuilder : public BuilderInputInterface {
+class Builder::KeyBuilder : public BuilderInputInterface {
 public:
 
     KeyBuilder(Builder& main);
@@ -81,7 +82,7 @@ public:
 
 };
 
-class DictBuilder : public BuilderInputInterface {
+class Builder::DictBuilder : public BuilderInputInterface {
 public:
 
     DictBuilder(Builder& main);
@@ -93,7 +94,7 @@ public:
 
 };
 
-class ArrayBuilder : public BuilderInputInterface {
+class Builder::ArrayBuilder : public BuilderInputInterface {
 public:
 
     ArrayBuilder(Builder& main);

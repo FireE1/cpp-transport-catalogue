@@ -8,65 +8,27 @@ namespace json
 
 BuilderInputInterface::BuilderInputInterface(Builder& main) : main_(main) {}
 
-KeyBuilder BuilderInputInterface::Key(std::string str) {return main_.Key(str);}
+Builder::KeyBuilder BuilderInputInterface::Key(std::string str) {return main_.Key(std::move(str));}
 
-Builder& BuilderInputInterface::Value(Node::NodeVariations val) {return main_.Value(val);}
+Builder& BuilderInputInterface::Value(Node::NodeVariations val) {return main_.Value(std::move(val));}
 
-DictBuilder BuilderInputInterface::StartDict() {return main_.StartDict();}
+Builder::DictBuilder BuilderInputInterface::StartDict() {return main_.StartDict();}
 
 Builder& BuilderInputInterface::EndDict() {return main_.EndDict();}
 
-ArrayBuilder BuilderInputInterface::StartArray() {return main_.StartArray();}
+Builder::ArrayBuilder BuilderInputInterface::StartArray() {return main_.StartArray();}
 
 Builder& BuilderInputInterface::EndArray() {return main_.EndArray();}
 
-KeyBuilder::KeyBuilder(Builder& main) : BuilderInputInterface(main) {}
+Builder::KeyBuilder::KeyBuilder(Builder& main) : BuilderInputInterface(main) {}
 
-DictBuilder KeyBuilder::Value(Node::NodeVariations val) {return BuilderInputInterface::Value(val);}
+Builder::DictBuilder Builder::KeyBuilder::Value(Node::NodeVariations val) {return BuilderInputInterface::Value(std::move(val));}
 
-DictBuilder::DictBuilder(Builder& main) : BuilderInputInterface(main) {}
+Builder::DictBuilder::DictBuilder(Builder& main) : BuilderInputInterface(main) {}
 
-ArrayBuilder::ArrayBuilder(Builder& main) : BuilderInputInterface(main) {}
+Builder::ArrayBuilder::ArrayBuilder(Builder& main) : BuilderInputInterface(main) {}
 
-ArrayBuilder ArrayBuilder::Value(Node::NodeVariations val) {return BuilderInputInterface::Value(val);}
-
-
-Node ConvertToNode (Node::NodeVariations& raw_val) {
-    if (std::holds_alternative<Array>(raw_val))
-    {
-        Array val = std::get<Array>(raw_val);
-        return Node(val);
-    }
-    else if (std::holds_alternative<Dict>(raw_val))
-    {
-        Dict val = std::get<Dict>(raw_val);
-        return Node(val);
-    }
-    else if (std::holds_alternative<bool>(raw_val))
-    {
-        bool val = std::get<bool>(raw_val);
-        return Node(val);
-    }
-    else if (std::holds_alternative<int>(raw_val))
-    {
-        int val = std::get<int>(raw_val);
-        return Node(val);
-    }
-    else if (std::holds_alternative<double>(raw_val))
-    {
-        double val = std::get<double>(raw_val);
-        return Node(val);
-    }
-    else if (std::holds_alternative<std::string>(raw_val))
-    {
-        std::string val = std::get<std::string>(raw_val);
-        return Node(val);
-    }
-    else
-    {
-        return Node();
-    }
-}
+Builder::ArrayBuilder Builder::ArrayBuilder::Value(Node::NodeVariations val) {return BuilderInputInterface::Value(std::move(val));}
 
 void Builder::InsertObject(Node node) {
     if (nodes_stack_.empty())
@@ -79,73 +41,67 @@ void Builder::InsertObject(Node node) {
     }
     else
     {
-        if (!nodes_stack_.back().IsString() && !nodes_stack_.back().IsArray())
+        if (!nodes_stack_.back()->IsString() && !nodes_stack_.back()->IsArray())
         {
             throw std::logic_error("Not a Key");
         }
-        if (nodes_stack_.back().IsArray())
+        if (nodes_stack_.back()->IsArray())
         {
-            Array buff = nodes_stack_.back().AsArray();
-            buff.push_back(std::move(node));
-            nodes_stack_.pop_back();
-            nodes_stack_.push_back(Node(buff));
+            nodes_stack_.back()->GetArray().push_back(std::move(node));
         }
-        else if (nodes_stack_.back().IsString())
+        else if (nodes_stack_.back()->IsString())
         {
-            std::string key_buff = nodes_stack_.back().AsString();
+            std::string key_buff = nodes_stack_.back()->AsString();
             nodes_stack_.pop_back();
-            if (nodes_stack_.back().IsMap())
+            if (nodes_stack_.back()->IsMap())
             {
-                Dict buff = nodes_stack_.back().AsMap();
-                buff.emplace(key_buff, node);
-                nodes_stack_.pop_back();
-                nodes_stack_.push_back(Node(buff));
+                nodes_stack_.back()->GetDict().emplace(key_buff, node);
             }
         }
     }
 }
 
-KeyBuilder Builder::Key(std::string str) {
-    if (nodes_stack_.empty() || !nodes_stack_.back().IsMap())
+Builder::KeyBuilder Builder::Key(std::string str) {
+    if (nodes_stack_.empty() || !nodes_stack_.back()->IsMap())
     {
         throw std::logic_error("Wrong Key placement");
     }
-    nodes_stack_.push_back(Node(str));
+    nodes_stack_.push_back(std::move(std::make_unique<Node>(str)));
     return KeyBuilder(*this);
 }
 
 Builder& Builder::Value(Node::NodeVariations val) {
-    InsertObject(ConvertToNode(val));
+    InsertObject(Node(val));
     return *this;
 }
 
-DictBuilder Builder::StartDict() {
-    nodes_stack_.push_back(Node(Dict{}));
+Builder::DictBuilder Builder::StartDict() {
+    nodes_stack_.push_back(std::make_unique<Node>(Dict{}));
     return DictBuilder(*this);
 }
 
 Builder& Builder::EndDict() {
-    if (nodes_stack_.empty() || !nodes_stack_.back().IsMap())
+    if (nodes_stack_.empty() || !nodes_stack_.back()->IsMap())
     {
         throw std::logic_error("Dict ending error");
     }
-    Dict buff = nodes_stack_.back().AsMap();
+    Dict buff = nodes_stack_.back()->AsMap();
     nodes_stack_.pop_back();
     InsertObject(Node(buff));
     return *this;
 }
 
-ArrayBuilder Builder::StartArray() {
-    nodes_stack_.push_back(Node(Array{}));
+Builder::ArrayBuilder Builder::StartArray() {
+    nodes_stack_.push_back(std::make_unique<Node>(Array{}));
     return ArrayBuilder(*this);
 }
 
 Builder& Builder::EndArray() {
-    if (nodes_stack_.empty() || !nodes_stack_.back().IsArray())
+    if (nodes_stack_.empty() || !nodes_stack_.back()->IsArray())
     {
         throw std::logic_error("Array ending error");
     }
-    Array buff = nodes_stack_.back().AsArray();
+    Array buff = nodes_stack_.back()->AsArray();
     nodes_stack_.pop_back();
     InsertObject(Node(buff));
     return *this;
