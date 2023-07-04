@@ -128,6 +128,18 @@ void TransporCatalogue::SetStopToStopDistance(std::string_view stop_from, std::s
     from_stop_to_stop_[FindStop(stop_from)->stop_name][FindStop(stop_to)->stop_name] = lenght;
 }
 
+size_t TransporCatalogue::GetDistanceBetweenStops(const Domain::Stop* from, const Domain::Stop* to) const {
+    if (from_stop_to_stop_.count(from->stop_name) && from_stop_to_stop_.at(from->stop_name).count(to->stop_name))
+    {
+        return from_stop_to_stop_.at(from->stop_name).at(to->stop_name);
+    }
+    else if (from_stop_to_stop_.count(to->stop_name) && from_stop_to_stop_.at(to->stop_name).count(from->stop_name))
+    {
+        return from_stop_to_stop_.at(to->stop_name).at(from->stop_name);
+    }
+    return 0;
+}
+
 }
 
 }

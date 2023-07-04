@@ -2,9 +2,12 @@
 
 #include "geo.h"
 #include "svg.h"
+#include "graph.h"
 
 #include <string>
 #include <vector>
+#include <string_view>
+#include <variant>
 
 namespace Domain
 {
@@ -28,6 +31,36 @@ struct Bus {
     std::string bus;
     // Хранилище ссылок на остановки, находящиеся на маршруте(автобусе)
     std::vector<const Stop*> stops_for_bus_;
+};
+
+struct BusW_TimeAndVelocity {
+    double wait_time;
+    double velocity;
+};
+
+struct StopEdge
+{
+    std::string stop_name;
+    double time;
+};
+
+struct BusEdge
+{
+    std::string bus_name;
+    size_t span;
+    double time;
+};
+
+struct RouteInfo
+{
+    double time;
+    std::vector<std::variant<StopEdge, BusEdge>> route_edges;
+};
+
+struct RouterStopWait
+{
+    graph::VertexId begin;
+    graph::VertexId end;
 };
 
 }

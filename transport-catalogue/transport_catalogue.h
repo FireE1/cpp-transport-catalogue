@@ -17,27 +17,6 @@ namespace TransporCatalogueLib
 namespace CatalogueCore
 {
 
-// // Структура автобуса(маршрута)
-// struct Bus;
-
-// // Структура остановки
-// struct Stop {
-//     // Название остановки
-//     std::string stop_name;
-//     // Гео данные(долгота, широта)
-//     Geo::Coordinates coordinates;
-//     // Отсортированное хранилище маршрутов(автобусов), проходящих через остановку
-//     std::vector<Bus*>routs;
-// };
-
-// // Структура автобуса(маршрута)
-// struct Bus {
-//     // Название пвтобуса(маршрута)
-//     std::string bus;
-//     // Хранилище ссылок на остановки, находящиеся на маршруте(автобусе)
-//     std::vector<const Stop*> stops_for_bus_;
-// };
-
 using StopToStopDist = std::unordered_map<std::string_view, std::unordered_map<std::string_view, size_t>>;
 
 // Класс - ядро
@@ -68,6 +47,8 @@ public:
 
     // Функция добавления реальной дистанции(по дорогам) для остановок (остановка -> {остановка -> расстояние})
     void SetStopToStopDistance(std::string_view stop_from, std::string_view stop_to, size_t lenght);
+
+    size_t GetDistanceBetweenStops(const Domain::Stop* from, const Domain::Stop* to) const;
 
 private:
 

@@ -3,6 +3,7 @@
 #include "domain.h"
 #include "json_builder.h"
 #include "json_builder.cpp"
+#include "transport_router.h"
 
 #include <vector>
 #include <iostream>
@@ -15,6 +16,31 @@ namespace TransporCatalogueLib
 
 namespace jsonOperator
 {
+
+struct EdgeBuilder
+{
+    json::Node operator()(const Domain::StopEdge& edge) {
+        json::Builder to_ret;
+        to_ret.StartDict()
+              .Key("type").Value("Wait")
+              .Key("stop_name").Value(std::string(edge.stop_name))
+              .Key("time").Value(edge.time)
+              .EndDict();
+        return to_ret.Build();
+    }
+
+    json::Node operator()(const Domain::BusEdge& edge) {
+        json::Builder to_ret;
+        to_ret.StartDict()
+              .Key("type").Value("Bus")
+              .Key("bus").Value(edge.bus_name)
+              .Key("span_count").Value(int(edge.span))
+              .Key("time").Value(edge.time)
+              .EndDict();
+        return to_ret.Build();
+    }
+};
+
 
 // Получаем информацию на добавление с команды base_requests
 void ParseBase(json::Node& root, CatalogueCore::TransporCatalogue& cat, Handler::InfoKeeper& keeper) {
@@ -189,8 +215,26 @@ map_render::MapRender ParseRender(json::Node& root) {
     return map_render::MapRender(to_ret);
 }
 
+void ParseRouting(json::Node& root, CatalogueCore::TransporCatalogue& cat, Handler::InfoKeeper& keeper, TransportRouter::Router& router) {
+    // Получаем Dict настроек движения автобусов
+    json::Dict settings = root.AsMap();
+    // Добавляем настройки в удобное для взаимодействия хранилище
+    std::vector<const Domain::Stop*> stops;
+    for (auto stop : keeper.GetAllStops())
+    {
+        stops.push_back(cat.FindStop(stop));
+    }
+    std::vector<std::pair<const Domain::Bus*, bool>> buses;
+    for (auto bus : keeper.GetAllBuses())
+    {
+        buses.push_back(std::make_pair(cat.FindBus(bus.first), bus.second));
+    }
+    router.SetBusSettings({settings.at("bus_wait_time").AsDouble(), settings.at("bus_velocity").AsDouble()});
+    router.SetRouter(stops, buses, cat);
+}
+
 // Получаем информацию для вывода с команды stat_requests
-std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::TransporCatalogue& cat, map_render::MapRender& map, Handler::InfoKeeper& keeper) {
+std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::TransporCatalogue& cat, map_render::MapRender& map, Handler::InfoKeeper& keeper, TransportRouter::Router& router) {
     // Список команд на вывод
     json::Array requests = root.AsArray();
     // Список готовых ответов на вывод
@@ -278,6 +322,33 @@ std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::Transpo
             // Добавить собранный объект в вывод
             to_print.push_back(map_data.Build());
         }
+        else if (type == "Route")
+        {
+            const auto& route = router.BuildAndGetRoute(router.GetRouterOnStop(cat.FindStop(request.at("from").AsString()))->begin,
+                                                        router.GetRouterOnStop(cat.FindStop(request.at("to").AsString()))->begin);
+            json::Builder to_emplace;
+            if(!route)
+            {
+                to_emplace.StartDict()
+                          .Key("request_id").Value(request.at("id").AsInt())
+                          .Key("error_message").Value("not found")
+                          .EndDict();
+            }
+            else
+            {
+                json::Array items;
+                for (const auto& item : route->route_edges)
+                {
+                    items.emplace_back(std::visit(EdgeBuilder{}, item));
+                }
+                to_emplace.StartDict()
+                          .Key("request_id").Value(request.at("id").AsInt())
+                          .Key("total_time").Value(route->time)
+                          .Key("items").Value(items)
+                          .EndDict();
+            }
+            to_print.push_back(to_emplace.Build());
+        }
     }
     return to_print;
 }
@@ -289,6 +360,7 @@ void Reader(Handler::InfoKeeper& keeper, CatalogueCore::TransporCatalogue& cat, 
     json::Dict commands = root.AsMap();
     // Вектор выводов для запросов
     std::vector<json::Node> to_output;
+    TransportRouter::Router router;
     try
     {
         // Пытаемся получить информацию на добавление с команды base_requests
@@ -303,8 +375,14 @@ void Reader(Handler::InfoKeeper& keeper, CatalogueCore::TransporCatalogue& cat, 
     catch(...){}
     try
     {
+        // Пытаемся получить информацию о движении автобусов
+        ParseRouting(commands.at("routing_settings"), cat, keeper, router);
+    }
+    catch(...){}
+    try
+    {
         // Пытаемся получить информацию для вывода с команды stat_requests
-        to_output = ParseStat(commands.at("stat_requests"), cat, map, keeper);
+        to_output = ParseStat(commands.at("stat_requests"), cat, map, keeper, router);
     }
     catch(...){}
     // Добавляем в хранилище информацию на вывод
