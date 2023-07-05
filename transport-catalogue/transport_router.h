@@ -19,22 +19,50 @@ namespace TransportRouter
 constexpr size_t DISTANCE_ = 1000;
 constexpr size_t TIME_ = 60;
 
+struct BusW_TimeAndVelocity {
+    double wait_time;
+    double velocity;
+};
+
+struct StopEdge
+{
+    std::string stop_name;
+    double time;
+};
+
+struct BusEdge
+{
+    std::string bus_name;
+    size_t span;
+    double time;
+};
+
+struct RouteInfo
+{
+    double time;
+    std::vector<std::variant<StopEdge, BusEdge>> route_edges;
+};
+
+struct RouterStopWait
+{
+    graph::VertexId begin;
+    graph::VertexId end;
+};
+
 class Router {
 public:
 
-    void SetBusSettings(Domain::BusW_TimeAndVelocity settings);
+    void SetBusSettings(BusW_TimeAndVelocity settings);
 
-    void SetRouter(std::vector<const Domain::Stop*>& stops, std::vector<std::pair<const Domain::Bus*, bool>>& buses, const CatalogueCore::TransporCatalogue& cat);
+    void SetRouter(const std::vector<const Domain::Stop*>& stops, const std::vector<std::pair<const Domain::Bus*, bool>>& buses, const CatalogueCore::TransporCatalogue& cat);
 
-    std::optional<Domain::RouteInfo> BuildAndGetRoute(graph::VertexId begin, graph::VertexId end) const;
-
-    std::optional<Domain::RouterStopWait> GetRouterOnStop(const Domain::Stop* stop) const;
+    std::optional<RouteInfo> BuildAndGetRoute(const Domain::Stop* first_stop, const Domain::Stop* second_stop) const;
 
 private:
 
-    Domain::BusW_TimeAndVelocity bus_settings_;
-    std::unordered_map<const Domain::Stop*, Domain::RouterStopWait> stops_wait_;
-    std::unordered_map<graph::EdgeId, std::variant<Domain::StopEdge, Domain::BusEdge>> fast_edge_get_;
+    BusW_TimeAndVelocity bus_settings_;
+    std::unordered_map<const Domain::Stop*, RouterStopWait> stops_wait_;
+    std::unordered_map<graph::EdgeId, std::variant<StopEdge, BusEdge>> fast_edge_get_;
     std::unique_ptr<graph::DirectedWeightedGraph<double>> graph_;
     std::unique_ptr<graph::Router<double>> router_;
 

@@ -19,7 +19,7 @@ namespace jsonOperator
 
 struct EdgeBuilder
 {
-    json::Node operator()(const Domain::StopEdge& edge) {
+    json::Node operator()(const TransportRouter::StopEdge& edge) {
         json::Builder to_ret;
         to_ret.StartDict()
               .Key("type").Value("Wait")
@@ -29,7 +29,7 @@ struct EdgeBuilder
         return to_ret.Build();
     }
 
-    json::Node operator()(const Domain::BusEdge& edge) {
+    json::Node operator()(const TransportRouter::BusEdge& edge) {
         json::Builder to_ret;
         to_ret.StartDict()
               .Key("type").Value("Bus")
@@ -324,8 +324,7 @@ std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::Transpo
         }
         else if (type == "Route")
         {
-            const auto& route = router.BuildAndGetRoute(router.GetRouterOnStop(cat.FindStop(request.at("from").AsString()))->begin,
-                                                        router.GetRouterOnStop(cat.FindStop(request.at("to").AsString()))->begin);
+            const auto& route = router.BuildAndGetRoute(cat.FindStop(request.at("from").AsString()), cat.FindStop(request.at("to").AsString()));
             json::Builder to_emplace;
             if(!route)
             {
