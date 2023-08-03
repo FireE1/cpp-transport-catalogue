@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+package transport_graph;
+
+message Edge {
+    uint32 from = 1;
+    uint32 to = 2;
+    double weight = 3;
+}
+
+message IncidenceList {
+    repeated uint32 incidence_list = 1;
+}
+
+message Graph {
+    repeated Edge edges_ = 1;
+    repeated IncidenceList incidence_lists = 2;
+}
+
+message RouteInternalData {
+    bool nullopt = 1;
+    double weight = 2;
+    bool prev_edge_set = 3;
+    uint32 prev_edge = 4;
+};
+
+message RouteInternalData_vector {
+    repeated RouteInternalData route_internal_data_vector = 1;
+};
+
+message RoutesInternalData {
+    repeated RouteInternalData_vector routes_internal_data = 1;
+};
+
+message Router {
+    RoutesInternalData routes_internal_data = 1;
+};

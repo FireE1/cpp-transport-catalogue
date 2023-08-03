@@ -1,0 +1,56 @@
+syntax = "proto3";
+
+import "graph.proto";
+
+package transport_router;
+
+message BusW_TimeAndVelocity {
+    double wait_time = 1;
+    double velocity = 2;
+}
+
+message StopEdge {
+    string stop_name = 1;
+    double time = 2;
+};
+
+message BusEdge {
+    string bus_name = 1;
+    uint32 span = 2;
+    double time = 3;
+};
+
+message RouteEdges {
+    oneof route_edges {
+        StopEdge stop_edge = 1;
+        BusEdge bus_edge = 2;
+    }
+}
+
+message RouteInfo {
+    double time = 1;
+    repeated RouteEdges route_edges = 2;
+};
+
+message RouterStopWait {
+    uint32 begin = 1;
+    uint32 end = 2;
+};
+
+message StopWait {
+    string stop = 1;
+    RouterStopWait stop_wait = 2;
+}
+
+message EgdeGet {
+    uint32 edge_id = 1;
+    RouteEdges route_edges = 2;
+}
+
+message Router {
+    BusW_TimeAndVelocity settings = 1;
+    repeated StopWait stop_wait = 2;
+    repeated EgdeGet edge_get = 3;
+    transport_graph.Graph graph = 4;
+    transport_graph.Router router = 5;
+}
