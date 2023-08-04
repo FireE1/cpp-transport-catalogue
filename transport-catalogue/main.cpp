@@ -13,6 +13,8 @@
 
 using namespace std::literals;
 
+// почему то новые файлы выгрузило, а измененные оставило в прежнем виде
+
 void PrintUsage(std::ostream& stream = std::cerr) {
     stream << "Usage: transport_catalogue [make_base|process_requests]\n"sv;
 }
