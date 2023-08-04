@@ -58,6 +58,16 @@ public:
 
     std::optional<RouteInfo> BuildAndGetRoute(const Domain::Stop* first_stop, const Domain::Stop* second_stop) const;
 
+    const BusW_TimeAndVelocity& BusSettingsGetter() const {return bus_settings_;}
+    const std::unordered_map<const Domain::Stop*, RouterStopWait>& StopsWaitGetter() const {return stops_wait_;}
+    std::unordered_map<const Domain::Stop*, RouterStopWait>& MutableStopsWaitGetter() {return stops_wait_;}
+    const std::unordered_map<graph::EdgeId, std::variant<StopEdge, BusEdge>>& FastEdgeGetGetter() const {return fast_edge_get_;}
+    std::unordered_map<graph::EdgeId, std::variant<StopEdge, BusEdge>>& MutableFastEdgeGetGetter() {return fast_edge_get_;}
+    const std::unique_ptr<graph::DirectedWeightedGraph<double>>& GraphGetter() const {return graph_;}
+    std::unique_ptr<graph::DirectedWeightedGraph<double>>& MutableGraphGetter() {return graph_;}
+    const std::unique_ptr<graph::Router<double>>& RouterGetter() const {return router_;}
+    std::unique_ptr<graph::Router<double>>& MutableRouterGetter() {return router_;}
+
 private:
 
     BusW_TimeAndVelocity bus_settings_;
@@ -65,7 +75,7 @@ private:
     std::unordered_map<graph::EdgeId, std::variant<StopEdge, BusEdge>> fast_edge_get_;
     std::unique_ptr<graph::DirectedWeightedGraph<double>> graph_;
     std::unique_ptr<graph::Router<double>> router_;
-
+    
 };
 
 }

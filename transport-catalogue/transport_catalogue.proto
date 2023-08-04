@@ -3,7 +3,7 @@ syntax = "proto3";
 import "map_renderer.proto";
 import "transport_router.proto";
 
-package transport_catalogue;
+package proto_transport_catalogue;
 
 message Stop {
     uint32 id = 1;
@@ -24,14 +24,14 @@ message StopToStopDist {
     uint32 distance = 3;
 }
 
-message TransporCatalogue {
+message TransporCatalogueProto {
     repeated Stop stops = 1;
     repeated Bus buses = 2;
     repeated StopToStopDist from_stop_to_stop = 3;
 }
 
-message ComplexCatalogueInfo {
-    TransporCatalogue catalogue = 1;
-    transport_map_render.RenderSettings map_render_settings = 2;
-    transport_router.Router router = 3;
+message ComplexCatalogueInfoProto {
+    TransporCatalogueProto catalogue = 1;
+    proto_transport_map_render.RenderSettingsProto map_render_settings = 2;
+    proto_transport_router.RouterProto router = 3;
 }

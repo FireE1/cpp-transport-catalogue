@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package transport_graph;
+package proto_transport_graph;
 
 message Edge {
     uint32 from = 1;
@@ -12,7 +12,7 @@ message IncidenceList {
     repeated uint32 incidence_list = 1;
 }
 
-message Graph {
+message GraphProto {
     repeated Edge edges_ = 1;
     repeated IncidenceList incidence_lists = 2;
 }
@@ -32,6 +32,6 @@ message RoutesInternalData {
     repeated RouteInternalData_vector routes_internal_data = 1;
 };
 
-message Router {
+message RouterProto {
     RoutesInternalData routes_internal_data = 1;
 };

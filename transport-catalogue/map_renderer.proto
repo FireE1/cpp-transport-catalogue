@@ -2,19 +2,19 @@ syntax = "proto3";
 
 import "svg.proto";
 
-package transport_map_render;
+package proto_transport_map_render;
 
-message RenderSettings {
+message RenderSettingsProto {
     double width = 1;
     double height = 2;
     double padding = 3;
     double line_width = 4;
     double stop_radius = 5;
     uint32 bus_label_font_size = 6;
-    transport_svg.Point bus_label_offset = 7;
+    proto_transport_svg.Point bus_label_offset = 7;
     uint32 stop_label_font_size = 8;
-    transport_svg.Point stop_label_offset = 9;
-    transport_svg.Color underlayer_color = 10;
+    proto_transport_svg.Point stop_label_offset = 9;
+    proto_transport_svg.Color underlayer_color = 10;
     double underlayer_width = 11;
-    repeated transport_svg.Color color_palette = 12;
+    repeated proto_transport_svg.Color color_palette = 12;
 }

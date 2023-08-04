@@ -2,7 +2,7 @@ syntax = "proto3";
 
 import "graph.proto";
 
-package transport_router;
+package proto_transport_router;
 
 message BusW_TimeAndVelocity {
     double wait_time = 1;
@@ -47,10 +47,10 @@ message EgdeGet {
     RouteEdges route_edges = 2;
 }
 
-message Router {
+message RouterProto {
     BusW_TimeAndVelocity settings = 1;
     repeated StopWait stop_wait = 2;
     repeated EgdeGet edge_get = 3;
-    transport_graph.Graph graph = 4;
-    transport_graph.Router router = 5;
+    proto_transport_graph.GraphProto graph = 4;
+    proto_transport_graph.RouterProto router = 5;
 }

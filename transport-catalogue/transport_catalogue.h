@@ -1,7 +1,6 @@
 #pragma once
 
 #include "geo.h"
-#include "geo.cpp"
 #include "domain.h"
 
 #include <unordered_map>
@@ -49,6 +48,12 @@ public:
     void SetStopToStopDistance(std::string_view stop_from, std::string_view stop_to, size_t lenght);
 
     size_t GetDistanceBetweenStops(const Domain::Stop* from, const Domain::Stop* to) const;
+
+    const std::deque<Domain::Stop>& GetStops() const {return stops_;}
+
+    const std::deque<Domain::Bus>& GetBuses() const {return buses_;}
+
+    const StopToStopDist& GetDistances() const {return from_stop_to_stop_;}
 
 private:
 

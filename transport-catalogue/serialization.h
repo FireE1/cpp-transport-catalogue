@@ -16,26 +16,19 @@ public:
 
     void SerializeCatalogue(const CatalogueCore::TransporCatalogue& cat);
     void SerializeRenderSettings(const map_render::RenderSettings& settings);
-    void SerializeRouting(const TransportRouter::Router& routing, const transport_catalogue::TransporCatalogue& serialized_cat);
+    void SerializeRouting(const TransportRouter::Router& routing);
 
-    void Deserialize();
+    CatalogueCore::TransporCatalogue DeserializeCatalogue();
+    map_render::RenderSettings DeserializeRenderSettings();
+    TransportRouter::Router DeserializeRouting(const CatalogueCore::TransporCatalogue& cat);
 
-    transport_catalogue::ComplexCatalogueInfo* MutableGetSerializedInfo() {return &serialized_info_;}
-    CatalogueCore::TransporCatalogue* MutableGetCatalogue() {return &cat_;}
-    map_render::MapRender* MutableGetDrawing() {return &drawing_;}
-    TransportRouter::Router* MutableGetRouting() {return &routing_;}
+    proto_transport_catalogue::ComplexCatalogueInfoProto* MutableGetSerializedInfo() {return &serialized_info_;}
 
-    const transport_catalogue::ComplexCatalogueInfo* GetSerializedInfo() const {return &serialized_info_;}
-    const CatalogueCore::TransporCatalogue* GetCatalogue() const {return &cat_;}
-    const map_render::MapRender* GetDrawing() const {return &drawing_;}
-    const TransportRouter::Router* GetRouting() const {return &routing_;}
+    const proto_transport_catalogue::ComplexCatalogueInfoProto* GetSerializedInfo() const {return &serialized_info_;}
 
 private:
 
-    transport_catalogue::ComplexCatalogueInfo serialized_info_;
-    CatalogueCore::TransporCatalogue cat_;
-    map_render::MapRender drawing_;
-    TransportRouter::Router routing_;
+    proto_transport_catalogue::ComplexCatalogueInfoProto serialized_info_;
 
 };
 

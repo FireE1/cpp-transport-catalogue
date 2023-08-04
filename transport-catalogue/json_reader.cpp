@@ -2,8 +2,6 @@
 #include "svg.h"
 #include "domain.h"
 #include "json_builder.h"
-#include "json_builder.cpp"
-#include "transport_router.h"
 
 #include <vector>
 #include <iostream>
@@ -43,8 +41,7 @@ struct EdgeBuilder
 
 
 // Получаем информацию на добавление с команды base_requests
-void ParseBase(json::Node& root, CatalogueCore::TransporCatalogue& cat, Handler::InfoKeeper& keeper) {
-
+void ParseBase(json::Node& root, Serialization::SerializationClass& serialize, CatalogueCore::TransporCatalogue& cat/*, Handler::InfoKeeper& keeper*/) {
     // Структура для хранения дистанции между остановками
     struct DistanceToAdd
     {
@@ -93,7 +90,7 @@ void ParseBase(json::Node& root, CatalogueCore::TransporCatalogue& cat, Handler:
         // Добавляем остановку в каталог
         cat.AddStop({stop_name, {latitude, longitude}, {}});
         // Сохраняем информацию об остановке в удобное для взаимодействия хранилище
-        keeper.SaveStop(stop_name);
+        //keeper.SaveStop(stop_name);
         // Проверяемналичие обозначения дистанций в команде
         if (stop.count("road_distances"))
         {
@@ -141,10 +138,11 @@ void ParseBase(json::Node& root, CatalogueCore::TransporCatalogue& cat, Handler:
             stops_for_bus.insert(stops_for_bus.end(), route_back.begin(), route_back.end());
         }
         // Добавляем автобус(маршрут) в каталог
-        cat.AddBus({bus_name, stops_for_bus});
+        cat.AddBus({bus_name, stops_for_bus, bus.at("is_roundtrip").AsBool()});
          // Сохраняем информацию о маршруте(автобусе) в удобное для взаимодействия хранилище
-        keeper.SaveBus(bus_name, bus.at("is_roundtrip").AsBool());
+        //keeper.SaveBus(bus_name, bus.at("is_roundtrip").AsBool());
     }
+    serialize.SerializeCatalogue(cat);
 }
 
 // Функция проверяет тип задаваемого цвета
@@ -175,7 +173,7 @@ svg::Color CheckAndAddColor(json::Node& raw_color) {
 }
 
 // Получаем информацию для визуализации карты с команды render_settings
-map_render::MapRender ParseRender(json::Node& root) {
+void ParseRender(json::Node& root, Serialization::SerializationClass& serialize) {
     // Преаброзуем команду в тип Dict
     json::Dict raw_settings = root.AsMap();
     // Объект для сохранения результата
@@ -211,30 +209,39 @@ map_render::MapRender ParseRender(json::Node& root) {
     {
         to_ret.color_palette.push_back(CheckAndAddColor(color));
     }
-    // Возвращаем объект для проецирования карты с заданными настройками
-    return map_render::MapRender(to_ret);
+    serialize.SerializeRenderSettings(to_ret);
 }
 
-void ParseRouting(json::Node& root, CatalogueCore::TransporCatalogue& cat, Handler::InfoKeeper& keeper, TransportRouter::Router& router) {
+void ParseRouting(json::Node& root, CatalogueCore::TransporCatalogue& cat, Serialization::SerializationClass& serialize/*, Handler::InfoKeeper& keeper*/) {
+    TransportRouter::Router router;
     // Получаем Dict настроек движения автобусов
     json::Dict settings = root.AsMap();
     // Добавляем настройки в удобное для взаимодействия хранилище
     std::vector<const Domain::Stop*> stops;
-    for (auto stop : keeper.GetAllStops())
+    // for (auto stop : keeper.GetAllStops())
+    // {
+    //     stops.push_back(cat.FindStop(stop));
+    // }
+    for (const auto& stop : cat.GetStops())
     {
-        stops.push_back(cat.FindStop(stop));
+        stops.push_back(cat.FindStop(stop.stop_name));
     }
     std::vector<std::pair<const Domain::Bus*, bool>> buses;
-    for (auto bus : keeper.GetAllBuses())
+    // for (auto bus : keeper.GetAllBuses())
+    // {
+    //     buses.push_back(std::make_pair(cat.FindBus(bus.first), bus.second));
+    // }
+    for (const auto& bus : cat.GetBuses())
     {
-        buses.push_back(std::make_pair(cat.FindBus(bus.first), bus.second));
+        buses.push_back(std::make_pair(cat.FindBus(bus.bus), bus.is_roundtrip));
     }
     router.SetBusSettings({settings.at("bus_wait_time").AsDouble(), settings.at("bus_velocity").AsDouble()});
     router.SetRouter(stops, buses, cat);
+    serialize.SerializeRouting(router);
 }
 
 // Получаем информацию для вывода с команды stat_requests
-std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::TransporCatalogue& cat, map_render::MapRender& map, Handler::InfoKeeper& keeper, TransportRouter::Router& router) {
+std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::TransporCatalogue& cat, map_render::MapRender& map, TransportRouter::Router& router) {
     // Список команд на вывод
     json::Array requests = root.AsArray();
     // Список готовых ответов на вывод
@@ -311,7 +318,7 @@ std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::Transpo
         else if (type == "Map")
         {
             // Получаем собранную карту
-            std::ostringstream get_map = map.Draw(cat, keeper.GetAllBuses(), keeper.GetAllStops());
+            std::ostringstream get_map = map.Draw(cat.GetBuses(), cat.GetStops());
             std::string map_to_json = get_map.str();
             // Объект для построения результата
             json::Builder map_data;
@@ -352,40 +359,53 @@ std::vector<json::Node> ParseStat(json::Node& root, const CatalogueCore::Transpo
     return to_print;
 }
 
-void Reader(Handler::InfoKeeper& keeper, CatalogueCore::TransporCatalogue& cat, map_render::MapRender& map) {
+void Reader(Serialization::SerializationClass& serialize, Handler::InfoKeeper& keeper, const bool serialization) {
     // Получаем нод входных данных
     json::Node root = keeper.GetInput().GetRoot();
     // Преобразуем нод в map, где в качестве ключей - тип команды на исполнение
     json::Dict commands = root.AsMap();
-    // Вектор выводов для запросов
-    std::vector<json::Node> to_output;
-    TransportRouter::Router router;
-    try
+    if (serialization)
     {
-        // Пытаемся получить информацию на добавление с команды base_requests
-        ParseBase(commands.at("base_requests"), cat, keeper);
+        CatalogueCore::TransporCatalogue cat;
+        
+        try
+        {
+            // Пытаемся получить информацию на добавление с команды base_requests
+            ParseBase(commands.at("base_requests"), serialize, cat);
+        }
+        catch(...){}
+        try
+        {
+            // Пытаемся получить информацию для визуализации карты с команды render_settings
+            ParseRender(commands.at("render_settings"), serialize);
+        }
+        catch(...){}
+        try
+        {
+            // Пытаемся получить информацию о движении автобусов
+            ParseRouting(commands.at("routing_settings"), cat, serialize);
+        }
+        catch(...){}
     }
-    catch(...){}
-    try
+    else
     {
-        // Пытаемся получить информацию для визуализации карты с команды render_settings
-        map = ParseRender(commands.at("render_settings"));
+        CatalogueCore::TransporCatalogue cat = serialize.DeserializeCatalogue();
+        map_render::MapRender drawing;
+        *drawing.MutableGetSettings() = serialize.DeserializeRenderSettings();
+        TransportRouter::Router routing = serialize.DeserializeRouting(cat);
+
+        // Вектор выводов для запросов
+        std::vector<json::Node> to_output;
+
+        try
+        {
+            // Пытаемся получить информацию для вывода с команды stat_requests
+            to_output = ParseStat(commands.at("stat_requests"), cat, drawing, routing);
+        }
+        catch(...){}
+        // Добавляем в хранилище информацию на вывод
+        keeper.GetOutput() = json::Document(json::Node(to_output));
     }
-    catch(...){}
-    try
-    {
-        // Пытаемся получить информацию о движении автобусов
-        ParseRouting(commands.at("routing_settings"), cat, keeper, router);
-    }
-    catch(...){}
-    try
-    {
-        // Пытаемся получить информацию для вывода с команды stat_requests
-        to_output = ParseStat(commands.at("stat_requests"), cat, map, keeper, router);
-    }
-    catch(...){}
-    // Добавляем в хранилище информацию на вывод
-    keeper.GetOutput() = json::Document(json::Node(to_output));
 }
 
 }

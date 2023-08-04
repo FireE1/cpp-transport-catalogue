@@ -57,10 +57,10 @@ namespace TransportRouter
         for (auto [bus, round] : buses)
         {
             AddBusEdge(bus, cat, graph, stops_wait, bus_settings, fast_edge_get);
-            if (!round)
-            {
-                AddBusEdge(bus, cat, graph, stops_wait, bus_settings, fast_edge_get);
-            }
+            // if (!round)
+            // {
+            //     AddBusEdge(bus, cat, graph, stops_wait, bus_settings, fast_edge_get);
+            // }
         }
     }
 
@@ -84,6 +84,7 @@ namespace TransportRouter
     }
 
     std::optional<RouteInfo> Router::BuildAndGetRoute(const Domain::Stop* first_stop, const Domain::Stop* second_stop) const {
+
         const std::optional<graph::Router<double>::RouteInfo>& route = router_->BuildRoute(GetRouterOnStop(first_stop, stops_wait_)->begin, GetRouterOnStop(second_stop, stops_wait_)->begin);
         if (route.has_value())
         {
@@ -97,7 +98,6 @@ namespace TransportRouter
         }
         return std::nullopt;
     }
-
 }
 
 }

@@ -31,6 +31,8 @@ struct Bus {
     std::string bus;
     // Хранилище ссылок на остановки, находящиеся на маршруте(автобусе)
     std::vector<const Stop*> stops_for_bus_;
+
+    bool is_roundtrip;
 };
 
 }

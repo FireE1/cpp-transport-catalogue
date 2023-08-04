@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-package transport_svg;
+package proto_transport_svg;
 
 message Point {
     double x = 1;

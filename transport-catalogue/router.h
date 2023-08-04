@@ -14,18 +14,27 @@
 
 namespace graph {
 
+
+
 template <typename Weight>
 class Router {
 private:
     using Graph = DirectedWeightedGraph<Weight>;
 
 public:
+
+    struct RouteInternalData {
+        Weight weight;
+        std::optional<EdgeId> prev_edge;
+    };
     explicit Router(const Graph& graph);
 
     struct RouteInfo {
         Weight weight;
         std::vector<EdgeId> edges;
     };
+    
+    using RoutesInternalData = std::vector<std::vector<std::optional<RouteInternalData>>>;
 
     void Build() {
         InitializeRoutesInternalData(graph_);
@@ -38,13 +47,11 @@ public:
 
     std::optional<RouteInfo> BuildRoute(VertexId from, VertexId to) const;
 
-private:
-    struct RouteInternalData {
-        Weight weight;
-        std::optional<EdgeId> prev_edge;
-    };
-    using RoutesInternalData = std::vector<std::vector<std::optional<RouteInternalData>>>;
+    RoutesInternalData* GetInternal() {return &routes_internal_data_;}
+    std::optional<RouteInternalData>* SetInternal(const int outer, const int inner) {return &routes_internal_data_[outer][inner];}
 
+private:
+    
     void InitializeRoutesInternalData(const Graph& graph) {
         const size_t vertex_count = graph.GetVertexCount();
         for (VertexId vertex = 0; vertex < vertex_count; ++vertex) {
@@ -95,12 +102,16 @@ Router<Weight>::Router(const Graph& graph)
     , routes_internal_data_(graph.GetVertexCount(),
                             std::vector<std::optional<RouteInternalData>>(graph.GetVertexCount()))
 {
-    InitializeRoutesInternalData(graph);
-
     const size_t vertex_count = graph.GetVertexCount();
-    for (VertexId vertex_through = 0; vertex_through < vertex_count; ++vertex_through) {
-        RelaxRoutesInternalDataThroughVertex(vertex_count, vertex_through);
-    }
+        for (VertexId vertex = 0; vertex < vertex_count; ++vertex) {
+            routes_internal_data_[vertex][vertex] = RouteInternalData{ZERO_WEIGHT, std::nullopt};
+        }
+    // InitializeRoutesInternalData(graph);
+
+    // const size_t vertex_count = graph.GetVertexCount();
+    // for (VertexId vertex_through = 0; vertex_through < vertex_count; ++vertex_through) {
+    //     RelaxRoutesInternalDataThroughVertex(vertex_count, vertex_through);
+    // }
 }
 
 template <typename Weight>

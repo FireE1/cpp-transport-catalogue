@@ -112,12 +112,15 @@ public:
     MapRender() = default;
     explicit MapRender(const RenderSettings& settings) : settings_(settings) {}
 
-    std::ostringstream Draw(const CatalogueCore::TransporCatalogue& cat, std::set<std::pair<std::string, bool>> buses, std::set<std::string> stops);
+    std::ostringstream Draw(const std::deque<Domain::Bus>& buses, const std::deque<Domain::Stop>& stops);
 
     MapRender& operator=(const MapRender&& other) {
         settings_ = other.settings_;
         return *this;
     }
+
+    const RenderSettings GetSettings() const {return settings_;}
+    RenderSettings* MutableGetSettings() {return &settings_;}
 
 private:
 

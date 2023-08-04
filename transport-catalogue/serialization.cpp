@@ -9,7 +9,7 @@ namespace Serialization
 {
 
 void SerializationClass::SerializeCatalogue(const CatalogueCore::TransporCatalogue& cat) {
-    transport_catalogue::TransporCatalogue serialized_cat;
+    proto_transport_catalogue::TransporCatalogueProto serialized_cat;
     std::map<std::string, int> stop_to_id;
     {
         int stop_id = 0;
@@ -20,7 +20,7 @@ void SerializationClass::SerializeCatalogue(const CatalogueCore::TransporCatalog
         }
         for (const auto& stop_to_add : sorted_stops)
         {
-            transport_catalogue::Stop serialized_stop;
+            proto_transport_catalogue::Stop serialized_stop;
             serialized_stop.set_id(stop_id);
             serialized_stop.set_stop_name(stop_to_add);
             stop_to_id.emplace(stop_to_add, stop_id);
@@ -34,7 +34,7 @@ void SerializationClass::SerializeCatalogue(const CatalogueCore::TransporCatalog
     {
         for (const auto& [to, dist] : to_dist)
         {
-            transport_catalogue::StopToStopDist serialized_distance;
+            proto_transport_catalogue::StopToStopDist serialized_distance;
             serialized_distance.set_stop_from(stop_to_id.at(std::string(from)));
             serialized_distance.set_stop_to(stop_to_id.at(std::string(to)));
             serialized_distance.set_distance(dist);
@@ -49,7 +49,7 @@ void SerializationClass::SerializeCatalogue(const CatalogueCore::TransporCatalog
         }
         for (const auto& bus_to_add : sorted_buses)
         {
-            transport_catalogue::Bus serialized_bus;
+            proto_transport_catalogue::Bus serialized_bus;
             serialized_bus.set_bus_name(bus_to_add);
             for (const auto& bus_stop : cat.FindBus(bus_to_add)->stops_for_bus_)
             {
@@ -62,8 +62,8 @@ void SerializationClass::SerializeCatalogue(const CatalogueCore::TransporCatalog
     *serialized_info_.mutable_catalogue() = std::move(serialized_cat);
 }
 
-transport_svg::Color SerializeColor(const svg::Color& color) {
-    transport_svg::Color serialized_color;
+proto_transport_svg::Color SerializeColor(const svg::Color& color) {
+    proto_transport_svg::Color serialized_color;
     if (std::holds_alternative<std::monostate>(color))
     {
         serialized_color.set_none(true);
@@ -71,7 +71,7 @@ transport_svg::Color SerializeColor(const svg::Color& color) {
     else if (std::holds_alternative<svg::Rgb>(color))
     {
         svg::Rgb rgb = std::get<svg::Rgb>(color);
-        transport_svg::Rgb serialized_rgb;
+        proto_transport_svg::Rgb serialized_rgb;
         serialized_rgb.set_red(rgb.red);
         serialized_rgb.set_green(rgb.green);
         serialized_rgb.set_blue(rgb.blue);
@@ -80,7 +80,7 @@ transport_svg::Color SerializeColor(const svg::Color& color) {
     else if (std::holds_alternative<svg::Rgba>(color))
     {
         svg::Rgba rgba = std::get<svg::Rgba>(color);
-        transport_svg::Rgba serialized_rgba;
+        proto_transport_svg::Rgba serialized_rgba;
         serialized_rgba.set_red(rgba.red);
         serialized_rgba.set_green(rgba.green);
         serialized_rgba.set_blue(rgba.blue);
@@ -95,7 +95,7 @@ transport_svg::Color SerializeColor(const svg::Color& color) {
 }
 
 void SerializationClass::SerializeRenderSettings(const map_render::RenderSettings& settings) {
-    transport_map_render::RenderSettings serialized_settings;
+    proto_transport_map_render::RenderSettingsProto serialized_settings;
     serialized_settings.set_width(settings.width);
     serialized_settings.set_height(settings.height);
     serialized_settings.set_padding(settings.padding);
@@ -103,14 +103,14 @@ void SerializationClass::SerializeRenderSettings(const map_render::RenderSetting
     serialized_settings.set_stop_radius(settings.stop_radius);
     serialized_settings.set_bus_label_font_size(settings.bus_label_font_size);
     {
-        transport_svg::Point bus_label_offset;
+        proto_transport_svg::Point bus_label_offset;
         bus_label_offset.set_x(settings.bus_label_offset.x);
         bus_label_offset.set_y(settings.bus_label_offset.y);
         *serialized_settings.mutable_bus_label_offset() = bus_label_offset;
     }
     serialized_settings.set_stop_label_font_size(settings.stop_label_font_size);
     {
-        transport_svg::Point stop_label_offset;
+        proto_transport_svg::Point stop_label_offset;
         stop_label_offset.set_x(settings.stop_label_offset.x);
         stop_label_offset.set_y(settings.stop_label_offset.y);
         *serialized_settings.mutable_stop_label_offset() = stop_label_offset;
@@ -124,20 +124,20 @@ void SerializationClass::SerializeRenderSettings(const map_render::RenderSetting
     *serialized_info_.mutable_map_render_settings() = std::move(serialized_settings);
 }
 
-void SerializationClass::SerializeRouting(const TransportRouter::Router& routing, const transport_catalogue::TransporCatalogue& serialized_cat) {
-    transport_router::Router serialized_routing;
+void SerializationClass::SerializeRouting(const TransportRouter::Router& routing) {
+    proto_transport_router::RouterProto serialized_routing;
     {
         const auto& bus_settings = routing.BusSettingsGetter();
-        transport_router::BusW_TimeAndVelocity serialized_settings;
+        proto_transport_router::BusW_TimeAndVelocity serialized_settings;
         serialized_settings.set_wait_time(bus_settings.wait_time);
         serialized_settings.set_velocity(bus_settings.velocity);
         *serialized_routing.mutable_settings() = serialized_settings;
     }
     for (const auto& [stop, rsw] : routing.StopsWaitGetter())
     {
-        transport_router::StopWait serialized_stop_wait;
+        proto_transport_router::StopWait serialized_stop_wait;
         serialized_stop_wait.set_stop(stop->stop_name);
-        transport_router::RouterStopWait serialized_rsw;
+        proto_transport_router::RouterStopWait serialized_rsw;
         serialized_rsw.set_begin(rsw.begin);
         serialized_rsw.set_end(rsw.end);
         *serialized_stop_wait.mutable_stop_wait() = serialized_rsw;
@@ -146,13 +146,13 @@ void SerializationClass::SerializeRouting(const TransportRouter::Router& routing
     
     for (const auto& [edge, edge_type] : routing.FastEdgeGetGetter())
     {
-        transport_router::EgdeGet serialized_edge_get;
+        proto_transport_router::EgdeGet serialized_edge_get;
         serialized_edge_get.set_edge_id(edge);
-        transport_router::RouteEdges serialized_edge_type;
+        proto_transport_router::RouteEdges serialized_edge_type;
         if (std::holds_alternative<TransportRouter::StopEdge>(edge_type))
         {
             TransportRouter::StopEdge stop_edge = std::get<TransportRouter::StopEdge>(edge_type);
-            transport_router::StopEdge serialized_stop_edge;
+            proto_transport_router::StopEdge serialized_stop_edge;
             serialized_stop_edge.set_stop_name(stop_edge.stop_name);
             serialized_stop_edge.set_time(stop_edge.time);
             *serialized_edge_type.mutable_stop_edge() = serialized_stop_edge;
@@ -160,7 +160,7 @@ void SerializationClass::SerializeRouting(const TransportRouter::Router& routing
         else if (std::holds_alternative<TransportRouter::BusEdge>(edge_type))
         {
             TransportRouter::BusEdge bus_edge = std::get<TransportRouter::BusEdge>(edge_type);
-            transport_router::BusEdge serialized_bus_edge;
+            proto_transport_router::BusEdge serialized_bus_edge;
             serialized_bus_edge.set_bus_name(bus_edge.bus_name);
             serialized_bus_edge.set_span(bus_edge.span);
             serialized_bus_edge.set_time(bus_edge.time);
@@ -172,10 +172,10 @@ void SerializationClass::SerializeRouting(const TransportRouter::Router& routing
 
     {
         const auto& graph_edges = routing.GraphGetter()->GetEdges();
-        transport_graph::Graph serialized_graph;
+        proto_transport_graph::GraphProto serialized_graph;
         for (const auto& edge : graph_edges)
         {
-            transport_graph::Edge serialized_edge;
+            proto_transport_graph::Edge serialized_edge;
             serialized_edge.set_from(edge.from);
             serialized_edge.set_to(edge.to);
             serialized_edge.set_weight(edge.weight);
@@ -184,7 +184,7 @@ void SerializationClass::SerializeRouting(const TransportRouter::Router& routing
         const auto& graph_incidence_lists = routing.GraphGetter()->GetIncidenceLists();
         for (const auto& incidence_list : graph_incidence_lists)
         {
-            transport_graph::IncidenceList serialized_lists;
+            proto_transport_graph::IncidenceList serialized_lists;
             for (const auto& list : incidence_list)
             {
                 serialized_lists.add_incidence_list(list);
@@ -195,14 +195,14 @@ void SerializationClass::SerializeRouting(const TransportRouter::Router& routing
     }
     {
         const auto& router_internal = *(routing.RouterGetter()->GetInternal());
-        transport_graph::Router serialized_router;
-        transport_graph::RoutesInternalData serialized_internals;
+        proto_transport_graph::RouterProto serialized_router;
+        proto_transport_graph::RoutesInternalData serialized_internals;
         for (const auto& rts_vect : router_internal)
         {
-            transport_graph::RouteInternalData_vector serialized_rts_vect;
+            proto_transport_graph::RouteInternalData_vector serialized_rts_vect;
             for (const auto& internal : rts_vect)
             {
-                transport_graph::RouteInternalData serialized_internal;
+                proto_transport_graph::RouteInternalData serialized_internal;
                 if (internal.has_value())
                 {
                     serialized_internal.set_nullopt(false);
@@ -231,8 +231,9 @@ void SerializationClass::SerializeRouting(const TransportRouter::Router& routing
     *serialized_info_.mutable_router() = std::move(serialized_routing);
 }
 
-CatalogueCore::TransporCatalogue DeserializeCatalogue(const transport_catalogue::TransporCatalogue& serialized_cat) {
+CatalogueCore::TransporCatalogue SerializationClass::DeserializeCatalogue() {
     CatalogueCore::TransporCatalogue cat;
+    const auto& serialized_cat = serialized_info_.catalogue();
     const auto& serialized_stops = serialized_cat.stops();
     for (const auto& serialized_stop : serialized_stops)
     {
@@ -268,7 +269,7 @@ CatalogueCore::TransporCatalogue DeserializeCatalogue(const transport_catalogue:
     return cat;
 }
 
-svg::Color DeserializeColor(const transport_svg::Color& serialized_color) {
+svg::Color DeserializeColor(const proto_transport_svg::Color& serialized_color) {
     svg::Color color;
     if (serialized_color.has_rgb())
     {
@@ -296,8 +297,9 @@ svg::Color DeserializeColor(const transport_svg::Color& serialized_color) {
     return color;
 }
 
-map_render::RenderSettings DeserializeRenderSettings(const transport_map_render::RenderSettings& serialized_settings) {
+map_render::RenderSettings SerializationClass::DeserializeRenderSettings() {
     map_render::RenderSettings settings;
+    const auto& serialized_settings = serialized_info_.map_render_settings();
     settings.width = serialized_settings.width();
     settings.height = serialized_settings.height();
     settings.padding = serialized_settings.padding();
@@ -328,10 +330,11 @@ map_render::RenderSettings DeserializeRenderSettings(const transport_map_render:
     return settings;
 }
 
-TransportRouter::Router DeserializeRouting(const transport_router::Router& serialized_routing, const transport_catalogue::TransporCatalogue& serialized_cat, const CatalogueCore::TransporCatalogue& cat) {
+TransportRouter::Router SerializationClass::DeserializeRouting(const CatalogueCore::TransporCatalogue& cat) {
     // получаем настройки автобуса
     //const auto& serialized_settings = serialized_routing.settings();
     //TransportRouter::BusW_TimeAndVelocity routing_settings = {serialized_settings.wait_time(), serialized_settings.velocity()};
+    const auto& serialized_routing = serialized_info_.router();
     TransportRouter::BusW_TimeAndVelocity routing_settings = {serialized_routing.settings().wait_time(), serialized_routing.settings().velocity()};
     // инициализируем роутер и вкидываем в него настройки
     TransportRouter::Router routing;
@@ -343,7 +346,7 @@ TransportRouter::Router DeserializeRouting(const transport_router::Router& seria
         //for (const auto& stop_wait : serialized_stop_wait)
         for (const auto& stop_wait : serialized_routing.stop_wait())
         {
-            transport_router::RouterStopWait serialized_rsw = stop_wait.stop_wait();
+            proto_transport_router::RouterStopWait serialized_rsw = stop_wait.stop_wait();
             TransportRouter::RouterStopWait begin_end = {serialized_rsw.begin(), serialized_rsw.end()};
             to_insert_sw.push_back(std::make_pair(cat.FindStop(stop_wait.stop()), begin_end));
         }
@@ -357,7 +360,7 @@ TransportRouter::Router DeserializeRouting(const transport_router::Router& seria
         for (const auto& edge_get : serialized_routing.edge_get())
         {
             const auto& edge_id = edge_get.edge_id();
-            transport_router::RouteEdges type = edge_get.route_edges();
+            proto_transport_router::RouteEdges type = edge_get.route_edges();
             if (type.has_stop_edge())
             {
                 std::string stop_name = type.stop_edge().stop_name();
@@ -442,13 +445,6 @@ TransportRouter::Router DeserializeRouting(const transport_router::Router& seria
         ++outer_vector_id;
     }
     return routing;
-}
-
-void SerializationClass::Deserialize() {
-    cat_ = DeserializeCatalogue(serialized_info_.catalogue());
-    *drawing_.MutableGetSettings() = DeserializeRenderSettings(serialized_info_.map_render_settings());
-    *SerializationClass::MutableGetRouting() = DeserializeRouting(serialized_info_.router(), serialized_info_.catalogue(), cat_);
-    serialized_info_.Clear();
 }
 
 }

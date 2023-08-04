@@ -33,6 +33,9 @@ public:
     const Edge<Weight>& GetEdge(EdgeId edge_id) const;
     IncidentEdgesRange GetIncidentEdges(VertexId vertex) const;
 
+    std::vector<Edge<Weight>>& GetEdges() {return edges_;}
+    std::vector<IncidenceList>& GetIncidenceLists() {return incidence_lists_;}
+
 private:
     std::vector<Edge<Weight>> edges_;
     std::vector<IncidenceList> incidence_lists_;
