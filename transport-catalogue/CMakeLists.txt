@@ -6,53 +6,42 @@ set(CMAKE_CXX_STANDARD 17)
 find_package(Protobuf REQUIRED)
 find_package(Threads REQUIRED)
  
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS transport_catalogue.proto 
-                                            svg.proto 
-                                            map_renderer.proto 
-                                            graph.proto 
-                                            transport_router.proto)
+add_subdirectory(proto)
+
+set(UTILITY ./Utility/geo.h 
+            ./Utility/geo.cpp 
+            ./Utility/ranges.h)
  
-set(UTILITY geo.h 
-            geo.cpp 
-            ranges.h)
- 
-set(TRANSPORT_CATALOGUE domain.h 
-                        domain.cpp
-                        transport_catalogue.h 
-                        transport_catalogue.cpp 
-                        transport_catalogue.proto)
+set(TRANSPORT_CATALOGUE ./Transport_Catalogue/domain.h 
+                        ./Transport_Catalogue/domain.cpp
+                        ./Transport_Catalogue/transport_catalogue.h 
+                        ./Transport_Catalogue/transport_catalogue.cpp)
                       
-set(ROUTER graph.h
-           graph.proto
-           router.h        
-           transport_router.h 
-           transport_router.cpp
-           transport_router.proto)
+set(ROUTER ./Router/graph.h
+           ./Router/router.h        
+           ./Router/transport_router.h 
+           ./Router/transport_router.cpp)
                               
-set(JSON json.h 
-         json.cpp 
-         json_builder.h 
-         json_builder.cpp 
-         json_reader.h 
-         json_reader.cpp)
+set(JSON ./Json/json.h 
+         ./Json/json.cpp 
+         ./Json/json_builder.h 
+         ./Json/json_builder.cpp 
+         ./Json/json_reader.h 
+         ./Json/json_reader.cpp)
                
-set(SVG svg.h 
-        svg.cpp
-        svg.proto)
+set(SVG ./SVG/svg.h 
+        ./SVG/svg.cpp)
         
-set(MAP_RENDERER map_renderer.h
-                 map_renderer.cpp
-                 map_renderer.proto)
+set(MAP_RENDERER ./Map_renderer/map_renderer.h
+                 ./Map_renderer/map_renderer.cpp)
               
-set(SERIALIZATION serialization.h 
-                  serialization.cpp)
+set(SERIALIZATION ./Serialization/serialization.h 
+                  ./Serialization/serialization.cpp)
                  
-set(REQUEST_HANDLER request_handler.h 
-                    request_handler.cpp)
+set(REQUEST_HANDLER ./Request_handler/request_handler.h 
+                    ./Request_handler/request_handler.cpp)
  
 add_executable(transport_catalogue main.cpp 
-                                   ${PROTO_SRCS} 
-                                   ${PROTO_HDRS} 
                                    ${UTILITY}
                                    ${TRANSPORT_CATALOGUE}
                                    ${ROUTER} 
@@ -64,4 +53,4 @@ add_executable(transport_catalogue main.cpp
  
 target_include_directories(transport_catalogue PUBLIC ${Protobuf_INCLUDE_DIRS})
 target_include_directories(transport_catalogue PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(transport_catalogue "$<IF:$<CONFIG:Debug>,${Protobuf_LIBRARY_DEBUG},${Protobuf_LIBRARY}>" Threads::Threads)
+target_link_libraries(transport_catalogue proto "$<IF:$<CONFIG:Debug>,${Protobuf_LIBRARY_DEBUG},${Protobuf_LIBRARY}>" Threads::Threads)
